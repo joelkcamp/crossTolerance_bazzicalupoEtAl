@@ -23,11 +23,11 @@ library(ggplot2)
 # set wd
 x = getwd()
 setwd(x)
-setwd("~/Dropbox/ottoLabNotes/cross_tol_data/raw_OD/")
-source("~/Dropbox/ottoLabNotes/cross_tol_data/bioscreen_functions.R")
+setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_OD/")
+source("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/bioscreen_functions.R")
 
 # Pathway to folder where bioscreen output and codes files live 
-folder <- "~/Dropbox/ottoLabNotes/cross_tol_data/raw_OD/"
+folder <- "~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_OD/"
 
 # conc = evolved 'home' and metal = test environment
 # remove batch 8 from machine 2 since the oly77 didn't work
@@ -43,7 +43,7 @@ code_read <-  lapply(code_list, read.csv)
 
 ```{r dataframes}
 
-setwd("~/Dropbox/ottoLabNotes/cross_tol_data/")
+setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/")
 
 # Create dataframe codes
 
@@ -87,7 +87,7 @@ write.csv(df, file = 'mbm_intermediate_files/df_MBM.csv') #save dataframe
 df = df[ ,-c(187,188)] # check depending on the df file
 
 # loop through dataframe, select OD measurements, use spline, recover the highest value for spline slope
-pdf("~/Dropbox/ottoLabNotes/cross_tol_data/figures/growth_curves_recip_trans.pdf", onefile = TRUE)
+pdf("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/figures/growth_curves_recip_trans.pdf", onefile = TRUE)
 par(mfrow = c(10,4))
 par(mar = c(0,0,0,0))
 par(cex=0.5, mai=c(0.1,0.2,0.1,0.1))
