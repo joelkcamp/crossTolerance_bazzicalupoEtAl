@@ -7,7 +7,7 @@ library(readr) #readcsv
 # set wd
 x = getwd()
 setwd(x)
-setwd("~/Dropbox/ottoLabNotes/cross_tol_data/")
+setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/")
 source("bioscreen_functions.R")
 
 # Shape of Tolerance
