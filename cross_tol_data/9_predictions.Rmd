@@ -1,0 +1,253 @@
+---
+title: "predictions"
+output: html_document
+date: '2023-06-06'
+---
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(viridis)
+library(cowplot)
+library(tidyverse)
+library(vegan)
+library(ggrepel)
+library(dplyr)
+library(gtools)
+library(reshape)
+library(reshape2)
+library(lme4)
+library(lmerTest)
+library(tidyr)
+library(broom)
+library(rsq)
+library(performance)
+library(Rmisc)
+
+
+x = getwd()
+setwd(x)
+```
+
+Setting color palette
+```{r}
+relfitPalette <- c("#787878", "#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+
+legend_title1 <- "Test\nEnvironment"
+legend_title2 <- "Evolution\nEnvironment"
+legend_title3 = "Environment"
+```
+
+get those fucking names right
+```{r }
+
+name_codes = read_csv("code_strain_line.csv")
+mydata3 <- read.csv("mbm_intermediate_files/mydata3.csv")
+
+```
+
+
+adding SGD prediction data and usgs correlations petite info for model (different than visualization)
+```{r}
+prop_pleio <- read.csv("predictions/prop_pleio_both.csv")
+prop_pleiovis <- read.csv("predictions/prop_pleio.csv")
+usgs = read_csv('predictions/soilmet_trans_combos_both.csv')
+usgsvis = read_csv('predictions/soilmet_trans_combos.csv')
+ORP = read_csv('predictions/elect_pot_both.csv')
+ORP$diff = 1-(ORP$sim)
+ORPvis = read_csv('predictions/ele_pot.csv')
+met_ppm = read_csv("predictions/met_ppm.csv")
+
+petite = read_csv('raw_outcross_petite/petites.csv')
+colnames(petite)[colnames(petite) == "evoline"] ="code_0"
+petites <- merge(petite,name_codes,by="code_0")
+colnames(petites)[colnames(petites) == "code_2"] ="strain"
+
+```
+
+
+
+
+```{r}
+
+
+mydata3$combo <- paste(mydata3$E1, mydata3$E2, sep= "")
+mydata3$prop.syn <- prop_pleio$prop.syn[match(mydata3$combo,prop_pleio$combo)] 
+mydata3$no.genes <- prop_pleio$no.genes[match(mydata3$combo,prop_pleio$combo)] 
+mydata3$all_slope <- usgs$all_slope[match(mydata3$combo,usgs$combo)] 
+mydata3$ORP <- ORP$diff[match(mydata3$combo,ORP$combo)] 
+mydata3$ppm <- met_ppm$ppm[match(mydata3$E1,met_ppm$metal)] 
+mydata3$petite <- petites$petite[match(mydata3$strain,petites$strain)] 
+
+react.norm =mydata3
+mydata3=na.omit(mydata3)
+
+
+var_data3 <- mydata3 %>%
+  filter(E2!=".YPAD") 
+
+```
+
+
+# look at the data
+
+```{r}
+#data3 = read_csv("data3.csv")
+
+#just look at the data, 
+hist(var_data3$relfit) # looks super normal
+hist(log(var_data3$relfit)) # that's better
+
+hist(var_data3$ORP) # this looks bimodal and I don't know
+hist(var_data3$prop.syn) # this almost looks normal?
+hist(var_data3$all_slope) # 
+hist(log(var_data3$ppm)) # 
+```
+
+
+plot data against relfit1
+
+```{r}
+plot(var_data3$ORP,var_data3$relfit) #is this a negative slope???? so the more different the oxidative reduction potential of the media are, the more cross-tolerance?? UGH i don't know
+plot(var_data3$prop.syn,var_data3$relfit)
+plot(var_data3$all_slope,var_data3$relfit)
+plot(log(var_data3$ppm),var_data3$relfit) #is this a negative slope???? so the more different the oxidative reduction 
+
+var_lm = lm(log(relfit+1) ~ E2+E1+E1:E2+machine,data=var_data3)
+summary(var_lm)
+
+```
+
+
+```{r}
+#test random effects on crosstolerance include measurement error
+
+
+var_lmer <- lmer(1 + log(relfit+1) ~ ORP + prop.syn + all_slope + log(ppm) + petite + (1|E2)+(1|E1)+(1|E1:E2)+(1|machine/plate)+(1|strain:E2)+(1|strain:E1)+(1|strain:E1:E2),data=var_data3)
+summary(var_lmer)
+icc(var_lmer, by_group = TRUE)
+anova(var_lmer)
+
+```
+
+
+
+Data visualization
+```{r}
+
+orplin=mydata3 %>% 
+  ggplot(aes(x=ORP,y=relfit)) +
+    geom_point() +
+    geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
+     theme_minimal() +
+    labs(x="Predicted environmental distance", y="Relative Fitness")
+
+
+proplin=mydata3 %>% 
+  ggplot(aes(x=prop.syn,y=relfit)) +
+    geom_point() +
+    geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
+     theme_minimal() +
+    labs(x="Predicted proportion of gene overlap", y="Relative Fitness")
+
+
+usgslin=mydata3 %>% 
+  ggplot(aes(x=all_slope,y=relfit)) +
+    geom_point() +
+    geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
+     theme_minimal() +
+    labs(x="Predicted metal co-occurrence", y="Relative Fitness")
+
+
+
+
+```
+
+
+```{r}
+# Make heatmap of the differences between metal reactivity values
+
+orpmap=ORPvis %>% 
+  ggplot(aes(x=met1,y=met2,color=ORP)) + 
+    geom_point(shape=15, size=15) +
+    scale_color_gradient(low = "blue", high = "yellow",
+    name="Electropotential\nsimilarity") +
+    scale_x_discrete(position = "top") + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) 
+    #+scale_size(range=c(8,18), name="Number of genes\nin common")
+#ggsave("~/Dropbox/ottoLabNotes/aneuploidy/ORPheatmap.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+propmap=prop_pleiovis %>% 
+  ggplot(aes(x=met1,y=met2,color=prop.syn)) + 
+    geom_point(aes(size = no.genes), shape=15) +
+    scale_color_gradient(low = "yellow", high = "blue",
+    name="Proportion\npositive\npleiotropy") +
+    scale_x_discrete(position = "top") + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+    scale_size(range=c(8,18), name="Number of genes\nin common")
+
+
+usgsmap=usgsvis %>% 
+  ggplot(aes(x=reference,y=combo,color=all_slope)) + 
+    geom_point(shape=15, size=15) +
+    scale_color_gradient(low = "yellow", high = "blue",
+    name="Metal\nCorrelation") +
+    scale_x_discrete(position = "top") + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) 
+
+
+```
+
+
+Make dataframe with ppm in YPAD of metals
+Average across all the samples with no excess of that metal.
+YPD is the "ecology" of our yeast
+Hypothesis: the amount of metal the yeast is generally exposed to will predict the quality of the environment (by quality I mean if excess will lead to specialized mutations or general mutations), OR the more of the metal in the media, the more specialized the mutations will be and less cross tolerance
+
+```{r }
+
+E1ppm_summary <- mydata3 %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit", groupvars = c("E1")) 
+
+E1ppm_summary$ppm <- met_ppm$ppm[match(met_ppm$metal,E1ppm_summary$E1)]
+
+anv_ppm=lm(relfit ~ log(ppm), data=E1ppm_summary)
+ppm_lmer <- lmer(1 + relfit ~ log(ppm) + (1|E1) ,data=mydata3)
+
+e1ppm=E1ppm_summary %>%
+  ggplot(aes(x=log(ppm),y=relfit,color=E1))+
+  geom_point(alpha=0.8, size=5, aes(group=E1))+ 
+    geom_errorbar(aes(ymin = relfit + ci, ymax = relfit - ci))+
+  scale_color_manual(legend_title3, values=relfitPalette2) + 
+  geom_abline(slope = coef(anv_ppm)[["log(ppm)"]],intercept = coef(anv_ppm)[["(Intercept)"]])+
+  #abline(lm(relfit1 ~ ppm, data=E1_summary))+
+    labs(x="Log of parts per million in YPD", y="Overall Genotype Quality")+
+    theme_bw() +
+    #xlim(-0.001,0.055)+
+    #ylim(-0.01,0.05)+
+    theme(legend.title=element_text(size=rel(0.75))) 
+#ggsave("E1_vs_ppm.jpeg", width=5, height=4, units = "in", dpi=700)
+
+```
+
+```{r }
+p1=plot_grid(
+  orpmap, orplin, labels = c("A","B"),
+  ncol = 2, rel_widths = c(2, .75)
+)
+p2=plot_grid(propmap, proplin, labels = c("C","D"),
+  ncol = 2, rel_widths = c(2, .75)
+)
+p3=plot_grid(usgsmap,usgslin, labels = c("E","F"),
+  ncol = 2, rel_widths = c(2, .75)
+)
+plot_grid(p1,p2,p3,e1ppm, labels = c("","","","G"),
+  ncol = 1
+)
+ggsave("figures/predictsquat.jpeg", width=9, height=15, units = "in", dpi=700)
+```

@@ -1,0 +1,915 @@
+---
+title: "03_cross_tol"
+output: html_document
+date: '2023-06-03'
+---
+
+```{r}
+library(tidyverse)
+library(broom)
+library(Rmisc)
+library(ggthemes)
+library(cowplot)
+```
+
+Setting color palette
+```{r}
+relfitPalette <- c("#787878", "#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+relfitPaletteDark <- c("darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
+relfitPaletteBoth = c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF","darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
+
+
+legend_title1 <- "Test\nEnvironment"
+legend_title2 <- "Evolution\nEnvironment"
+legend_metal = "Environment"
+legend_met = "Metal"
+legend_dark = "With (light) or Without (dark)\nlines tested in their\nevolution metal"
+```
+
+Load data files
+```{r}
+
+x = getwd()
+setwd(x)
+
+mydata <- read.csv("mbm_intermediate_files/max_growth_MBM.csv") %>% 
+  na.omit()
+
+```
+
+E1 = evolution environment; E2 = test environment
+```{r}
+mydata <- mydata %>% 
+  dplyr::rename(
+    E2 = metal,
+    E1 = conc
+    )
+```
+
+
+Getting average max slopes from ancestor so we can calculate relative fitness
+```{r}
+OLY077_data <- mydata %>% 
+  filter(strain=="OLY077" | strain=="ypadOLY077") %>% 
+  arrange(E2) %>% 
+  select(strain, E2, maxSlope)
+  
+detach(package:Rmisc)
+detach(package:plyr)
+OLY077_data <- OLY077_data %>% 
+  dplyr::group_by(E2) %>% 
+  summarise(anc_slope = mean(maxSlope))
+```
+
+
+```{r}
+mydata3 <- merge(OLY077_data, mydata, by = 'E2')
+
+mydataOLY <- mydata3 %>% 
+  filter(strain=="ypadOLY077")
+
+mydata3 <- mydata3 %>% 
+  mutate(relfit = maxSlope - anc_slope)
+
+mydata3 <- mydata3 %>% 
+  mutate(E2 = case_when(E2 == "YPAD" ~ ".YPAD",
+                        E2 == "CD" ~ "Cd",
+                        E2 == "CO" ~ "Co",
+                        E2 == "CU" ~ "Cu",
+                        E2 == "MN" ~ "Mn",
+                        E2 == "NI" ~ "Ni",
+                        E2 == "ZN" ~ "Zn",
+                        )) %>% 
+  mutate(E1 = case_when(E1 == "YPAD" ~ ".YPAD",
+                        E1 == "cd" ~ "Cd",
+                        E1 == "co" ~ "Co",
+                        E1 == "cu" ~ "Cu",
+                        E1 == "mn" ~ "Mn",
+                        E1 == "ni" ~ "Ni",
+                        E1 == "zn" ~ "Zn",
+                        ))
+#write_csv(mydata3, "mbm_intermediate_files/mydata3.csv")
+```
+
+
+Averaging replicates of the same strain by environment
+```{r}
+#mydata3 = read_csv("mbm_intermediate_files/mydata3.csv")
+mydata6 <- mydata3 %>% 
+  select(strain, E1, E2, maxSlope, anc_slope) %>% 
+  arrange(strain, E1, E2) %>% 
+  group_by(strain, E1, E2, anc_slope) %>% 
+  summarise(avg_slope = mean(maxSlope)) %>% 
+  mutate(relfit1 = avg_slope - anc_slope)
+
+all_summary1 <- mydata6 %>% 
+  #filter(E2!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1", "E2"))
+# maybe add a row with YPAD to have zeros in the figures?
+#write_csv(mydata6, "mbm_intermediate_files/mydata6.csv")
+```
+
+
+```{r}
+#mydata6 = read_csv("mbm_intermediate_files/mydata6.csv") # if starting from here, run all_summary1 from previous chunk
+
+diff_relfit=mydata6 %>%
+  group_by(strain) %>%
+  filter(strain!="OLY077") %>%
+  mutate(relfitdiff = avg_slope[E2 == E2] - avg_slope[E2 == E1]) %>%
+  mutate(relfitsim = 1-relfitdiff) # so that larger numbers are more pleiotropy and smaller numbers are less pleiotropy
+
+diff_summary1 <- diff_relfit %>% 
+  filter(E1!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "relfitdiff", groupvars = c("E1", "E2"))
+
+test_env_home=diff_relfit %>%
+  #na.omit() %>% 
+  filter(E1!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=relfitdiff,fill=E1)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+      geom_hline(yintercept=0, size=1.5)+
+stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=diff_summary1, aes(ymin = relfitdiff - ci, ymax = relfitdiff + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_metal, values=relfitPalette2) +
+    labs(x="Test Environment", y="Relative\nFitness", title = "Relative to performance in the evolution environment") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(1))) +
+      annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#A880FF") +
+  geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+ggsave("figures/all_point_home.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+test_env_anc=mydata6 %>% # run all_summary1 from previous chunk 
+  #na.omit() %>% 
+  #filter(E1!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=E1)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+      geom_hline(yintercept=0, size=1.5)+
+stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=all_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_metal, values=relfitPalette) +
+    labs(x="Test Environment", y="Relative\nFitness", title = "Relative to the performance of the ancestor") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(1))) +
+      annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#A880FF") +
+  geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+
+
+ggsave("figures/all_point_anc.jpeg", width=8, height=6, units = "in", dpi=1000)
+```
+
+Looking by strain
+```{r}
+E1cd_data <- mydata6 %>% 
+  filter(E1 == "Cd")
+
+E1co_data <- mydata6 %>% 
+  filter(E1 == "Co")
+
+E1cu_data <- mydata6 %>% 
+  filter(E1 == "Cu")
+
+E1mn_data <- mydata6 %>% 
+  filter(E1 == "Mn")
+
+E1ni_data <- mydata6 %>% 
+  filter(E1 == "Ni")
+
+E1zn_data <- mydata6 %>% 
+  filter(E1 == "Zn")
+```
+
+
+```{r}
+cd_lines=E1cd_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain))  +
+  geom_path(color = "#FF9A17")+ 
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") + 
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+)
+#ggsave("cd_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+co_lines=E1co_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#3B83FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("co_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+cu_lines=E1cu_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#3EFF3B") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("cu_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+mn_lines=E1mn_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#FD73FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("mn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+ni_lines=E1ni_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#FFF200") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("ni_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+zn_lines=E1zn_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#A880FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("zn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+```
+
+
+```{r}
+
+profiles=plot_grid(cd_lines,co_lines,cu_lines,mn_lines,ni_lines,zn_lines,ncol = 3, align = "v",labels = c("A","B","C","D","E", "F"))
+
+ggsave("figures/profiles.jpeg", width=10, height=7, units = "in", dpi=700) #
+
+cross_tol=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),test_env_home + theme(legend.position = "none"),ncol = 1, align = "h", labels = c("", "G","H"), rel_heights = c(2,1,1)) # + theme(legend.position = "none")
+
+ggsave("figures/phenotypes1.jpeg", width=14, height=10, units = "in", dpi=700) # figure 2
+```
+
+
+```{r}
+react.norm = mydata6 
+
+```
+
+
+Violin plots by evolution environment and by test environment
+```{r}
+E2_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E2"))
+
+E1_summary <- react.norm %>% 
+  filter(E1!=".YPAD") %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1")) 
+
+plot_E2vio=react.norm %>%
+  #na.omit() %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=E2)) +
+    geom_violin(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E2)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.5, preserve="single")) +
+    geom_errorbar(data=E2_summary, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.25, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_met, values=relfitPaletteDark) +
+    labs(x="Test Environment", y="Relative Growth Rate", title = "By Test Environment") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(0.75))) 
+
+plot_E1vio=react.norm %>%
+  #na.omit() %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E1!=".YPAD") %>% 
+  filter(E2!=E1) %>% 
+  ggplot(aes(x=E1,y=relfit1,fill=E1)) +
+    geom_violin(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.5, preserve="single")) +
+    geom_errorbar(data=E1_summary, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.25, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_met, values=relfitPaletteDark) +
+    labs(x="Evolution Environment", y="Relative Growth Rate", title = "By Evolution Environment") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(0.75)))
+
+
+axes_E12=plot_grid(
+  plot_E1vio+ theme(legend.position = "none"), plot_E2vio+ theme(legend.position = "none"), labels = c("H","I"),
+  ncol = 1, align = "v"
+)
+
+#ggsave("figures/violin_environments1.jpeg", width=10, height=7, units = "in", dpi=700)
+
+```
+
+
+Genotype quality against environemnt quality:
+```{r}
+
+allE2_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  #filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E2"))
+
+nosameE2_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E2"))
+
+
+allE1_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E1!=".YPAD") %>% 
+  #filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1")) 
+
+nosameE1_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E1!=".YPAD") %>% 
+  filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1"))
+
+
+allE1_summary$relfit1E2 <- allE2_summary$relfit1[match(allE1_summary$E1,allE2_summary$E2)]
+allE1_summary$sdE2 <- allE2_summary$sd[match(allE1_summary$E1,allE2_summary$E2)]
+allE1_summary$seE2 <- allE2_summary$se[match(allE1_summary$E1,allE2_summary$E2)]
+allE1_summary$ciE2 <- allE2_summary$ci[match(allE1_summary$E1,allE2_summary$E2)]
+
+allE1_summary[allE1_summary == "Cd"] <- ".Cd"
+allE1_summary[allE1_summary == "Co"] <- ".Co"
+allE1_summary[allE1_summary == "Cu"] <- ".Cu"
+allE1_summary[allE1_summary == "Mn"] <- ".Mn"
+allE1_summary[allE1_summary == "Ni"] <- ".Ni"
+allE1_summary[allE1_summary == "Zn"] <- ".Zn"
+
+nosameE1_summary$relfit1E2 <- nosameE2_summary$relfit1[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+nosameE1_summary$sdE2 <- nosameE2_summary$sd[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+nosameE1_summary$seE2 <- nosameE2_summary$se[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+nosameE1_summary$ciE2 <- nosameE2_summary$ci[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+
+
+qualDark = nosameE1_summary %>%
+  #arrange(E1) %>% 
+  ggplot(aes(x=relfit1,y=relfit1E2,color=E1)) +
+  geom_point(alpha=0.8, size=5, aes(group=E1))+
+  #geom_point(data = ) + # too many points with the all lines?
+    geom_hline(yintercept=0, size=1)+
+    geom_vline(xintercept=0, size=1)+ 
+  scale_color_manual(legend_metal, values=relfitPaletteDark) +
+  guides(color=guide_legend(ncol=2))+ 
+    labs(x="Performance by Evolution Evironment", y="Performance by\nTest Evironment")+
+    theme_bw() +
+    #xlim(-0.001,0.053)+
+    #ylim(-0.005,0.063)+
+    theme(legend.title=element_text(size=rel(0.75)))+ 
+    geom_errorbar(aes(ymin = relfit1E2 - ciE2, ymax = relfit1E2 + ciE2)) + 
+    geom_errorbarh(aes(xmin = relfit1 + ci, xmax = relfit1 - ci))
+
+qualLight = allE1_summary %>%
+  #arrange(E1) %>% 
+  ggplot(aes(x=relfit1,y=relfit1E2,color=E1))+
+  geom_point(alpha=0.8, size=5, aes(group=E1))+
+  #geom_point(data = ) + # too many points with the all lines?
+    geom_hline(yintercept=0, size=1)+
+    geom_vline(xintercept=0, size=1)+ 
+  scale_color_manual(legend_metal, values=relfitPalette2) +
+  guides(color=guide_legend(ncol=2))+ 
+    labs(x="Performance by Evolution Evironment", y="Performance by\nTest Evironment")+
+    theme_bw() +
+    #xlim(-0.001,0.053)+
+    #ylim(-0.005,0.063)+
+    theme(legend.title=element_text(size=rel(0.75)))+ 
+    geom_errorbar(aes(ymin = relfit1E2 - ciE2, ymax = relfit1E2 + ciE2)) + 
+    geom_errorbarh(aes(xmin = relfit1 + ci, xmax = relfit1 - ci))
+
+plot_grid(qualLight,qualDark, labels = c("A","B"), ncol = 1, align = "h")
+
+ggsave("figures/qualityGenEnv.jpeg", width=8, height=8, units = "in", dpi=700)
+```
+
+
+
+Is there a relationship linear for cross-tolerance between E1 and E2, environment vs genotype quality?
+
+```{r}
+dark = lm(relfit1E2~relfit1,data=nosameE1_summary)
+light = lm(relfit1E2~relfit1,data=allE1_summary)
+summary(dark)
+summary(light)
+```
+
+
+
+
+Filter Reaction norms of metal pairs
+```{r}
+react.norm$combo <- paste(react.norm$E1, react.norm$E2, sep= "")
+
+CDCO <- react.norm %>%   
+  filter(combo %in% c("CdCd","CdCo","CoCd","CoCo"))
+CDCU <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdCu","CuCd","CuCu"))
+CDMN <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdMn","MnCd","MnMn"))
+CDNI <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdNi","NiCd","NiNi"))
+CDZN <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdZn","ZnCd","ZnZn"))
+COCU <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoCu","CuCo","CuCu"))
+COMN <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoMn","MnCo","MnMn"))
+CONI <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoNi","NiCo","NiNi"))
+COZN <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoZn","ZnCo","ZnZn"))
+CUMN <- react.norm %>% 
+  filter(combo %in% c("CuCu","CuMn","MnCu","MnMn"))
+CUNI <- react.norm %>% 
+  filter(combo %in% c("CuCu","CuNi","NiCu","NiNi"))
+CUZN <- react.norm %>% 
+  filter(combo %in% c("CuCu","CuZn","ZnCu","ZnZn"))
+MNNI <- react.norm %>% 
+  filter(combo %in% c("MnMn","MnNi","NiMn","NiNi"))
+MNZN <- react.norm %>% 
+  filter(combo %in% c("MnMn","MnZn","ZnMn","ZnZn"))
+NIZN <- react.norm %>% 
+  filter(combo %in% c("NiNi","NiZn","ZnNi","ZnZn"))
+```
+Anovas for pairs of metals
+```{r}
+aov_results <- list(
+
+aov_CDCO <- aov(relfit1 ~ E1*E2, data = CDCO),
+aov_CDCU <- aov(relfit1 ~ E1*E2, data = CDCU),
+aov_CDMN <- aov(relfit1 ~ E1*E2, data = CDMN),
+aov_CDNI <- aov(relfit1 ~ E1*E2, data = CDNI),
+aov_CDZN <- aov(relfit1 ~ E1*E2, data = CDZN),
+aov_COCU <- aov(relfit1 ~ E1*E2, data = COCU),
+aov_COMN <- aov(relfit1 ~ E1*E2, data = COMN),
+aov_CONI <- aov(relfit1 ~ E1*E2, data = CONI),
+aov_COZN <- aov(relfit1 ~ E1*E2, data = COZN),
+aov_CUMN <- aov(relfit1 ~ E1*E2, data = CUMN),
+aov_CUNI <- aov(relfit1 ~ E1*E2, data = CUNI),
+aov_CUZN <- aov(relfit1 ~ E1*E2, data = CUZN),
+aov_MNNI <- aov(relfit1 ~ E1*E2, data = MNNI),
+aov_MNZN <- aov(relfit1 ~ E1*E2, data = MNZN),
+aov_NIZN <- aov(relfit1 ~ E1*E2, data = NIZN)
+
+)
+
+# Convert ANOVA results to a data frame
+aov_df <- map_df(aov_results, tidy, .id = "data")
+
+
+# adjust the p-values using the Benjamini-Hochberg method
+aov_df$adj_p.value <- p.adjust(aov_df$p.value, method = "BH")
+
+aov_df$data[aov_df$data == "1"]  <- "CDCO"
+aov_df$data[aov_df$data == "2"]  <- "CDCU"
+aov_df$data[aov_df$data == "3"]  <- "CDMN"
+aov_df$data[aov_df$data == "4"]  <- "CDNI"
+aov_df$data[aov_df$data == "5"]  <- "CDZN"
+aov_df$data[aov_df$data == "6"]  <- "COCU"
+aov_df$data[aov_df$data == "7"]  <- "COMN"
+aov_df$data[aov_df$data == "8"]  <- "CONI"
+aov_df$data[aov_df$data == "9"]  <- "COZN"
+aov_df$data[aov_df$data == "10"] <- "CUMN"
+aov_df$data[aov_df$data == "11"] <- "CUNI"
+aov_df$data[aov_df$data == "12"] <- "CUZN"
+aov_df$data[aov_df$data == "13"] <- "MNNI"
+aov_df$data[aov_df$data == "14"] <- "MNZN"
+aov_df$data[aov_df$data == "15"] <- "NIZN"
+
+write_csv(aov_df, "mbm_intermediate_files/aov_df_reactnorms_aov.csv")
+
+
+```
+
+Plot norms of metal pairs
+```{r}
+#relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+
+plotCDCO=ggplot(CDCO,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#3B83FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+plotCDCU=ggplot(CDCU,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - s\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#3EFF3B"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCDMN=ggplot(CDMN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#FD73FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+plotCDNI=ggplot(CDNI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - ns\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+plotCDZN=ggplot(CDZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+# COBALT
+
+plotCOCU=ggplot(COCU,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#3EFF3B"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCOMN=ggplot(COMN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#FD73FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCONI=ggplot(CONI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCOZN=ggplot(COZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+    geom_text(x=1.5, y=0.12, label="EE - ns\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+ geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+# COPPER
+
+plotCUMN=ggplot(CUMN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - s\nTE - s\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3EFF3B", "#FD73FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCUNI=ggplot(CUNI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - s\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3EFF3B", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCUZN=ggplot(CUZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3EFF3B", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+# MANGANESE
+
+plotMNNI=ggplot(MNNI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FD73FF", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotMNZN=ggplot(MNZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+   geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+  geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FD73FF", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+#Nickel Zinc
+
+plotNIZN=ggplot(NIZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+   geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+  geom_point(alpha=0.7)+
+ stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FFF200", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+```
+
+Plot all reaction norms together
+```{r}
+
+# extract legends from the plots
+legendCDCO <- get_legend(plotCDCO)
+legendCUMN <- get_legend(plotCUMN)
+legendNIZN <- get_legend(plotNIZN)
+
+react_norms_all = plot_grid(
+  plotCDCO+ theme(legend.position = "none"),plotCDCU+ theme(legend.position = "none"),plotCDMN+ theme(legend.position = "none"),plotCDNI+ theme(legend.position = "none"),plotCDZN+ theme(legend.position = "none"),plotCOCU+ theme(legend.position = "none"),plotCOMN+ theme(legend.position = "none"),plotCONI+ theme(legend.position = "none"),plotCOZN+ theme(legend.position = "none"),plotCUMN+ theme(legend.position = "none"),plotCUNI+ theme(legend.position = "none"),plotCUZN+ theme(legend.position = "none"),plotMNNI+ theme(legend.position = "none"),plotMNZN+ theme(legend.position = "none"),plotNIZN+ theme(legend.position = "none"), labels = c("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O"),
+  ncol = 5, align = "v"
+)
+ggsave("figures/reactnorm_suppl.jpeg", width=12, height=10, units = "in", dpi=700)
+```
+
+
+
+
+

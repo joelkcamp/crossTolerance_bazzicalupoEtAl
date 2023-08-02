@@ -1,0 +1,278 @@
+---
+title: "Metal resistance genes"
+output: html_document
+header-includes: \usepackage{colortbl}
+---
+
+```{r}
+library(tidyverse)
+library(stringr)
+library(VennDiagram)
+library(gtools)
+library(data.table)
+library(viridis)
+library(formattable)
+```
+
+Read in data taken directly from the metal resistance observable phenotype page on SGD
+
+```{r}
+x = getwd()
+setwd(x)
+
+genes <- read.csv("metal_resistance_annotations.csv")
+```
+
+Extract metal information from "Chemical" column and filter for metals of interest
+
+```{r}
+genes3 <- genes %>% 
+  mutate(Metal = case_when(grepl("copper", Chemical, ignore.case = TRUE) ~"copper",
+                            grepl("cadmi", Chemical, ignore.case = TRUE) ~"cadmium",
+                            grepl("nickel", Chemical, ignore.case = TRUE) ~"nickel",
+                            grepl("zinc", Chemical, ignore.case = TRUE) ~"zinc",
+                            grepl("arsen", Chemical, ignore.case = TRUE) ~"arsenic",
+                            grepl("gold", Chemical, ignore.case = TRUE) ~"gold",
+                            grepl("manga", Chemical, ignore.case = TRUE) ~"manganese",
+                            grepl("merc", Chemical, ignore.case = TRUE) ~"mercury",
+                            grepl("coba", Chemical, ignore.case = TRUE) ~"cobalt",
+                            grepl("alumi", Chemical, ignore.case = TRUE) ~"aluminum",
+                            grepl("iron", Chemical, ignore.case = TRUE) ~"iron",
+                            grepl("selen", Chemical, ignore.case = TRUE) ~"calcium",
+                            grepl("tin", Chemical, ignore.case = TRUE) ~"tin",
+                            grepl("chrom", Chemical, ignore.case = TRUE) ~"chromium",
+                            grepl("lead", Chemical, ignore.case = TRUE) ~"lead"
+                            )) %>% 
+  na.omit() %>% 
+  distinct() %>% 
+  filter(Metal == "cadmium" | 
+         Metal == "cobalt" |
+         Metal == "copper" | 
+         Metal == "manganese" | 
+         Metal == "nickel" |
+         Metal == "zinc") %>% 
+  select(Gene, Phenotype, Mutant.Information, Metal, Chemical)
+```
+
+Evaluate effect of mutation (null vs. overexpression) on phenotype (increase vs. decrease resistance)
+
+```{r}
+synergism <- genes3 %>% 
+  mutate(activity.sign = case_when(grepl("null", Mutant.Information, ignore.case = TRUE) ~"-",
+                                   grepl("overexp", Mutant.Information, ignore.case = TRUE) ~"+")) %>%
+  mutate(resist.sign = case_when(grepl("increa", Phenotype, ignore.case = TRUE) ~"+",
+                                   grepl("decrea", Phenotype, ignore.case = TRUE) ~"-")) %>%
+  mutate(product.sign = ifelse(activity.sign == resist.sign, "+",
+                        ifelse(activity.sign != resist.sign, "-", NA)))
+```
+
+Form lists of mutation effects for each metal
+
+```{r}
+cadmium_syn <- synergism %>% 
+  filter(Metal=="cadmium")
+cobalt_syn <- synergism %>% 
+  filter(Metal=="cobalt")
+copper_syn <- synergism %>% 
+  filter(Metal=="copper")
+manganese_syn <- synergism %>% 
+  filter(Metal=="manganese")
+nickel_syn <- synergism %>% 
+  filter(Metal=="nickel")
+zinc_syn <- synergism %>% 
+  filter(Metal=="zinc")
+```
+
+Merge lists for metal pairs and omit NAs so only genes in common remain. Determine if the two metals agree on the effect of a mutation on resistance. Calculate proportion of agreements in gene set and number of genes in the set.
+
+```{r}
+CdCo <- merge(cadmium_syn,cobalt_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>% 
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CdCo$pos.pleio)/nrow(CdCo)
+nrow(CdCo)
+```
+
+```{r}
+CdCu <- merge(cadmium_syn,copper_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CdCu$pos.pleio)/nrow(CdCu)
+nrow(CdCu)
+```
+
+```{r}
+CdMn <- merge(cadmium_syn,manganese_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CdMn$pos.pleio)/nrow(CdMn)
+nrow(CdMn)
+```
+
+```{r}
+CdNi <- merge(cadmium_syn,nickel_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CdNi$pos.pleio)/nrow(CdNi)
+nrow(CdNi)
+```
+
+```{r}
+CdZn <- merge(cadmium_syn,zinc_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CdZn$pos.pleio)/nrow(CdZn)
+nrow(CdZn)
+```
+
+```{r}
+CoCu <- merge(cobalt_syn,copper_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CoCu$pos.pleio)/nrow(CoCu)
+nrow(CoCu)
+```
+
+```{r}
+CoMn <- merge(cobalt_syn,manganese_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CoMn$pos.pleio)/nrow(CoMn)
+nrow(CoMn)
+```
+
+```{r}
+CoNi <- merge(cobalt_syn,nickel_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CoNi$pos.pleio)/nrow(CoNi)
+nrow(CoNi)
+```
+
+```{r}
+CoZn <- merge(cobalt_syn,zinc_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CoZn$pos.pleio)/nrow(CoZn)
+nrow(CoZn)
+```
+
+```{r}
+CuMn <- merge(copper_syn,manganese_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CuMn$pos.pleio)/nrow(CuMn)
+nrow(CuMn)
+```
+
+```{r}
+CuNi <- merge(copper_syn,nickel_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CuNi$pos.pleio)/nrow(CuNi)
+nrow(CuNi)
+```
+
+```{r}
+CuZn <- merge(copper_syn,zinc_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(CuZn$pos.pleio)/nrow(CuZn)
+nrow(CuZn)
+```
+
+```{r}
+MnNi <- merge(manganese_syn,nickel_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(MnNi$pos.pleio)/nrow(MnNi)
+nrow(MnNi)
+```
+
+```{r}
+MnZn <- merge(manganese_syn,zinc_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(MnZn$pos.pleio)/nrow(MnZn)
+nrow(MnZn)
+```
+
+```{r}
+NiZn <- merge(nickel_syn,zinc_syn,by="Gene") %>% 
+  select(Gene, Metal.x, Metal.y, product.sign.x, product.sign.y) %>% 
+  distinct() %>%  
+  na.omit() %>% 
+  mutate(pos.pleio = case_when(product.sign.x==product.sign.y ~ 1,
+                               product.sign.x!=product.sign.y ~ 0))
+sum(NiZn$pos.pleio)/nrow(NiZn)
+nrow(NiZn)
+```
+
+Make dataframe with values from above
+
+```{r}
+combo <- c("CdCo","CdCu","CdMn","CdNi","CdZn","CoCu","CoMn","CoNi","CoZn","CuMn","CuNi","CuZn","MnNi","MnZn","NiZn")
+met1 <- c("Cd","Cd","Cd","Cd","Cd","Co","Co","Co","Co","Cu","Cu","Cu","Mn","Mn","Ni")
+met2 <- c("Co","Cu","Mn","Ni","Zn","Cu","Mn","Ni","Zn","Mn","Ni","Zn","Ni","Zn","Zn")
+prop.syn <- c(0.8482759,0.8627451,0.8754325,0.6558442,0.7239819,0.44,0.8446602,0.8615385,0.9318182,0.9276018,0.5789474,0.4225352,0.744186,0.6329114,0.8253968)
+no.genes <- c(145,204,289,154,221,25,103,130,132,221,19,71,86,158,126)
+
+prop_pleio <- data.frame(combo, met1, met2, prop.syn, no.genes)
+```
+
+Visualize data
+
+```{r}
+prop_pleio %>% 
+  ggplot(aes(x=met1,y=met2,color=prop.syn)) + 
+    geom_point(aes(size = no.genes), shape=15) +
+    scale_color_gradient(low = "yellow", high = "blue",
+    name="Proportion\npositive\npleiotropy") +
+    scale_x_discrete(position = "top") + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
+    scale_size(range=c(8,18), name="Number of genes\nin common")
+ggsave("SGD_predictions.jpeg", width=7, height=5, units = "in", dpi=900)
+```

@@ -1,0 +1,423 @@
+---
+title: "petite_clean_data"
+output: html_document
+date: '2023-04-17'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(cowplot)
+#library(ggblur)
+# set wd
+source("~/Dropbox/ottoLabNotes/cross_tol_data/bioscreen_functions.R")
+library(viridis)
+setwd("~/Dropbox/ottoLabNotes/cross_tol_data/raw_outcross_petite/")
+
+# file with metadata of bioscreen wells
+codes <- read.csv("~/Dropbox/ottoLabNotes/cross_tol_data/raw_outcross_petite/bioscreen20230418BIO1_codes.csv") # 
+biosc2 <- read.csv("~/Dropbox/ottoLabNotes/cross_tol_data/raw_outcross_petite/20230418_BIO2.csv")
+
+```
+
+Setting color palette
+```{r}
+relfitPalette <- c("#787878", "#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+petitePalette2 = c("white", "black")
+
+legend_title1 <- "Test\nEnvironment"
+legend_title2 <- "Petite"
+```
+
+Combine dataframes for lines from outcrossing experiment
+
+```{r}
+
+# Transpose dataframe
+Time <- biosc2$Time #remember row id
+bio2 <- as.data.frame(t(biosc2[,-1])) #transpose dataframe, exclude 1st colunmn
+colnames(bio2) <- Time #create column names  
+
+# Combine the bioscreen output with metadata
+df = cbind(codes, bio2)
+
+
+```
+
+Plot petite outcross growth graphs
+
+```{r}
+
+# loop through matrix to get growth curves, maximum slope and final OD per well
+pdf("~/Dropbox/ottoLabNotes/cross_tol_data/figures/outcross_petite_metals.pdf", onefile = TRUE)
+par(mfrow = c(10,4))
+par(mar = c(0,0,0,0))
+par(cex=0.5, mai=c(0.1,0.2,0.1,0.1))
+for(r in 1:nrow(df)){
+  temp = as.numeric(df[r, 7:197])
+  time = seq(0.25, length(temp)/4, by = 0.25)
+  growth <- spline.slope(time, temp)
+  t <- spline(time, temp)
+   codes$initOD[r] <- mean(temp[3:8]) # Arbitrary choice, first between 45 min and 2.5 hours
+   # codes$OD_maxSlope[r] <- temp[which(time == t)]
+    codes$finalOD[r] <- mean(temp[(length(temp)-5):length(temp)])
+    codes$maxSlope[r] <- growth
+    codes$time_maxSlope[r] <- t
+    codes$finalTime[r] <- length(temp)/4
+    plot(temp ~ time, xlim = c(0, 70), ylim = c(0, 1.5), xlab = "Time (h)", ylab = "OD")
+    text(5, 1, paste0(codes$metal[r], " ", codes$strain[r], "\nC ", codes$conc[r],"\nr = ", round(growth, 3), "\ntime points\nlost: "), cex = 0.5)
+     abline(v=t)
+  }
+
+dev.off()
+
+
+```
+
+Get relative fitness data to merge with the coverage files
+```{r}
+out_mydata <- codes %>% 
+  dplyr::rename(
+     E2 = conc
+    )
+```
+
+Clean dataframe
+```{r}
+out_OLY077_data <- out_mydata %>% 
+  filter(strain=="OLY077" | strain=="ypadOLY077") %>% 
+  arrange(E2) %>% 
+  select(strain, E2, maxSlope)
+  
+out_OLY077_data <- out_OLY077_data %>% 
+  dplyr::group_by(E2) %>% 
+  summarise(anc_slope = mean(maxSlope))
+```
+
+
+```{r}
+out_mydata3 <- merge(out_OLY077_data, out_mydata, by = 'E2')
+
+out_mydataOLY <- out_mydata3 %>% 
+  filter(strain=="ypadOLY077")
+
+out_mydata3 <- out_mydata3 %>% 
+  mutate(relfit = maxSlope - anc_slope)
+
+out_mydata3 <- out_mydata3 %>% 
+  mutate(E2 = case_when(E2 == "YPAD" ~ ".YPAD",
+                        E2 == "CO" ~ "Co",
+                        E2 == "MN" ~ "Mn",
+                        )) 
+```
+
+Load metal experimental data 
+
+```{r}
+setwd("~/Dropbox/ottoLabNotes/cross_tol_data")
+name_codes = read_csv("code_strain_line.csv")
+mydata3 = read.csv("mbm_intermediate_files/mydata3.csv")
+mydata6 = mydata3 %>% 
+  select(strain, E1, E2, maxSlope, anc_slope) %>% 
+  arrange(strain, E1, E2) %>% 
+  group_by(strain, E1, E2, anc_slope) %>% 
+  summarise(avg_slope = mean(maxSlope)) %>% 
+  mutate(relfit1 = avg_slope - anc_slope) 
+
+
+out_mydata6 <- out_mydata3 %>% 
+  select(strain, E2,  maxSlope, anc_slope) %>% 
+  arrange(strain, E2) %>% 
+  group_by(strain, E2,  anc_slope) %>% 
+  summarise(avg_slope = mean(maxSlope)) %>% 
+  mutate(relfit1 = avg_slope - anc_slope)
+
+out_mydata6[out_mydata6 == "OLY077"] <- "W303"
+mydata6[mydata6 == "blank"] <- "Blank"
+
+out_mydata6 <- out_mydata6 %>% 
+  filter(strain != "Blank")
+
+```
+
+Add petite phenotype information
+
+```{r}
+out_petites = read_csv("raw_outcross_petite/outcross_petite.csv")
+legend_title_none = ""
+
+out_petite <- merge(out_mydata6,out_petites,by="strain")
+
+out_summary1 <- out_petite %>% 
+  #filter(E2!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c( "E2", "petite"))
+
+out_pet=out_petite %>%
+  na.omit() %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=petite)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=petite)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=out_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+     # scale_fill_discrete(limits = c("np", "p"),labels = c("Grande", "Petite"), values=petitePalette2)+
+    scale_fill_manual(legend_title_none, limits = c("np", "p"),labels = c("Grande", "Petite"), values=petitePalette2) +
+    labs(x="Test Environment", y="") +
+    theme_bw() +   geom_hline(yintercept=0, size=1)+
+    theme(legend.title=element_text(size=rel(0.75))) +
+    geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+#ggsave("figures/petite_outcross.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+```
+
+Petite analysis
+```{r}
+
+petites = read_csv("raw_outcross_petite/petites.csv")
+colnames(petites)[colnames(petites) == "evoline"] ="code_0"
+petites1 <- merge(petites,name_codes,by="code_0")
+colnames(petites1)[colnames(petites1) == "code_2"] ="strain"
+mydata7 <- merge(mydata6,petites1,by="strain")
+pet_summary1 <- mydata7 %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c( "E2", "petite"))
+
+met_pet=mydata7 %>%
+  na.omit() %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=petite)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=petite)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=pet_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values=petitePalette2) +
+    #scale_fill_manual(legend_title_none, limits = c("Non-petite (n = 70)", "Petite (n =38)"),labels = c("Grande (n = 70)", "Petite (n = 38)"), values=petitePalette2) +
+    labs(x="Test Environment", y="Relative Fitness") +
+    theme_bw() +  geom_hline(yintercept=0, size=1)+
+    theme(legend.title=element_text(size=rel(0.75))) +
+    geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+#ggsave("figures/petite_test_environment.jpeg", width=8, height=6, units = "in", dpi=1000)
+```
+
+Plot all petite performace together
+```{r}
+# extract legends from the plots
+legendout <- get_legend(out_pet)
+
+both_pet=plot_grid(
+  met_pet+ theme(legend.position = "none"), out_pet, labels = c("A","B"), rel_widths = c(2, 1.75)
+)
+ggsave("figures/met_out_petites.jpeg", width=10, height=5, units = "in", dpi=700)
+```
+
+
+Three separate by metal stacked
+```{r }
+mito_weird = read_csv("raw_outcross_petite/mito_weird100.csv") # windows of 100 bp
+petiteCopper = c( "#3EFF3B",  "#787878")
+petiteNickel = c("#FFF200","goldenrod1","#787878")
+petiteManganese = c("lavenderblush","thistle1","lightpink","lightpink2","palevioletred1","hotpink","deeppink","violetred","deeppink3","hotpink3","lightcoral","violet","orchid3","orchid4","#787878")
+petiteAll =c( "#3EFF3B","lavenderblush","thistle1","lightpink","lightpink2","palevioletred1","hotpink","deeppink","violetred","deeppink3","hotpink3","lightcoral","violet","orchid3","orchid4","#FFF200","goldenrod1","#787878")
+legend_strain = "Yeast Line"
+legend_blank =""
+
+mito_All=mito_weird %>%
+  ggplot(aes(x=pos,y=cov)) +
+  geom_point(alpha=0.8, size=0.75,aes(colour=strain)) +
+  scale_color_manual(legend_blank, values=petiteAll) +
+  theme_bw()+
+  ylim(0,9000)+
+  theme(legend.key.height = unit(0.25, "cm"))+
+  annotate("rect", xmin = 6546, xmax = 8194, ymin = 7500, ymax = 8000,
+           alpha = .25,fill = "blue", )+annotate("text", x = (6546+8194)/2, y = 8300, label = "15S rRNA", size = 3) +
+   annotate("rect", xmin = 13818, xmax = 26701, ymin = 7500, ymax = 8000,#13818	26701	COX1 
+           alpha = .25,fill = "blue", )+annotate("text", x = (13818+26701)/2, y = 8300, label = "COX1", size = 3) +
+  annotate("rect", xmin = 27666, xmax = 27812, ymin = 7500, ymax = 8000,#27666	27812	ATP8 
+           alpha = .25,fill = "blue", )+annotate("text", x = (27666+27812)/2, y = 8800, label = "ATP8", size = 3) +
+  annotate("rect", xmin = 28487, xmax = 29266, ymin = 7500, ymax = 8000,#28487	29266	ATP6
+           alpha = .25,fill = "blue")+annotate("text", x = (28487+29266)/2, y = 8200, label = "ATP6", size = 3)+
+  annotate("rect", xmin = 36540, xmax = 43647, ymin = 7500, ymax = 8000, #36540	43647	COB
+           alpha = .25,fill = "blue")+annotate("text", x = (36540+43647)/2, y = 8300, label = "COB", size = 3)+
+  annotate("rect", xmin = 46723, xmax = 46953, ymin = 7500, ymax = 8000, #46723	46953	OLI1
+           alpha = .25,fill = "blue", )+annotate("text", x = (46723+46953)/2, y = 8800, label = "OLI1", size = 3) +
+  annotate("rect", xmin = 48901, xmax = 50097, ymin = 7500, ymax = 8000, #	VAR1
+           alpha = .25,fill = "blue")+annotate("text", x = (48901+50097)/2, y = 8200, label = "VAR1", size = 3)+
+  annotate("rect", xmin = 58009, xmax = 62447, ymin = 7500, ymax = 8000, #58009	62447	21S_RRNA 
+           alpha = .25,fill = "blue", )+annotate("text", x = (58009+62447)/2, y = 8300, label = "21S rRNA", size = 3) +
+  annotate("rect", xmin = 73758, xmax = 74513, ymin = 7500, ymax = 8000, #73758	74513	COX2 
+           alpha = .25,fill = "blue", )+annotate("text", x = (74513+73758)/2, y = 8300, label = "COX2", size = 3) +
+  annotate("rect", xmin = 79213, xmax = 80022, ymin = 7500, ymax = 8000,#79213	80022	COX3 
+           alpha = .25,fill = "blue")+annotate("text", x = (79213+80022)/2, y = 8700, label = "COX3", size = 3)+
+  annotate("rect", xmin = 85295, xmax = 85777, ymin = 7500, ymax = 8000,#85295	85777	RPM1
+           alpha = .25,fill = "blue", )+annotate("text", x = (85295+85777)/2, y = 8300, label = "RPM1", size = 3)+
+  labs(x="", y="Mitochondrial coverage", size = 15) 
+
+mito_Mn=mito_weird %>%
+  filter(E1 %in% c("Mn", "YPAD")) %>%
+  ggplot(aes(x=pos,y=cov)) +
+  geom_point(alpha=0.8, size=0.75,aes(colour=strain)) +
+  scale_color_manual(legend_blank, values=petiteManganese) +
+  theme_bw()+
+  ylim(0,9000)+
+  theme(legend.key.height = unit(0.25, "cm"))+
+  annotate("rect", xmin = 6546, xmax = 8194, ymin = 7500, ymax = 8000,
+           alpha = .25,fill = "blue", )+annotate("text", x = (6546+8194)/2, y = 8300, label = "15S rRNA", size = 3) +
+   annotate("rect", xmin = 13818, xmax = 26701, ymin = 7500, ymax = 8000,#13818	26701	COX1 
+           alpha = .25,fill = "blue", )+annotate("text", x = (13818+26701)/2, y = 8300, label = "COX1", size = 3) +
+  annotate("rect", xmin = 27666, xmax = 27812, ymin = 7500, ymax = 8000,#27666	27812	ATP8 
+           alpha = .25,fill = "blue", )+annotate("text", x = (27666+27812)/2, y = 8800, label = "ATP8", size = 3) +
+  annotate("rect", xmin = 28487, xmax = 29266, ymin = 7500, ymax = 8000,#28487	29266	ATP6
+           alpha = .25,fill = "blue")+annotate("text", x = (28487+29266)/2, y = 8200, label = "ATP6", size = 3)+
+  annotate("rect", xmin = 36540, xmax = 43647, ymin = 7500, ymax = 8000, #36540	43647	COB
+           alpha = .25,fill = "blue")+annotate("text", x = (36540+43647)/2, y = 8300, label = "COB", size = 3)+
+  annotate("rect", xmin = 46723, xmax = 46953, ymin = 7500, ymax = 8000, #46723	46953	OLI1
+           alpha = .25,fill = "blue", )+annotate("text", x = (46723+46953)/2, y = 8800, label = "OLI1", size = 3) +
+  annotate("rect", xmin = 48901, xmax = 50097, ymin = 7500, ymax = 8000, #	VAR1
+           alpha = .25,fill = "blue")+annotate("text", x = (48901+50097)/2, y = 8200, label = "VAR1", size = 3)+
+  annotate("rect", xmin = 58009, xmax = 62447, ymin = 7500, ymax = 8000, #58009	62447	21S_RRNA 
+           alpha = .25,fill = "blue", )+annotate("text", x = (58009+62447)/2, y = 8300, label = "21S rRNA", size = 3) +
+  annotate("rect", xmin = 73758, xmax = 74513, ymin = 7500, ymax = 8000, #73758	74513	COX2 
+           alpha = .25,fill = "blue", )+annotate("text", x = (74513+73758)/2, y = 8300, label = "COX2", size = 3) +
+  annotate("rect", xmin = 79213, xmax = 80022, ymin = 7500, ymax = 8000,#79213	80022	COX3 
+           alpha = .25,fill = "blue")+annotate("text", x = (79213+80022)/2, y = 8700, label = "COX3", size = 3)+
+  annotate("rect", xmin = 85295, xmax = 85777, ymin = 7500, ymax = 8000,#85295	85777	RPM1
+           alpha = .25,fill = "blue", )+annotate("text", x = (85295+85777)/2, y = 8300, label = "RPM1", size = 3)+
+  labs(x="", y="Mitochondrial coverage", size = 15)  
+
+#ggsave("figures/mito_weird_cov.jpeg", width=8, height=4, units = "in", dpi=1000)
+
+mito_Ni=mito_weird %>%
+  filter(E1 %in% c("Ni", "YPAD")) %>%
+  ggplot(aes(x=pos,y=cov)) +
+  geom_point(alpha=0.8, size=0.75,aes(colour=strain)) +
+  scale_color_manual(legend_blank, values=petiteNickel) +
+  theme_bw()+
+  ylim(0,9000)+
+  theme(legend.key.height = unit(0.25, "cm"))+
+  annotate("rect", xmin = 6546, xmax = 8194, ymin = 7500, ymax = 8000,
+           alpha = .25,fill = "blue", )+annotate("text", x = (6546+8194)/2, y = 8300, label = "15S rRNA", size = 3) +
+   annotate("rect", xmin = 13818, xmax = 26701, ymin = 7500, ymax = 8000,#13818	26701	COX1 
+           alpha = .25,fill = "blue", )+annotate("text", x = (13818+26701)/2, y = 8300, label = "COX1", size = 3) +
+  annotate("rect", xmin = 27666, xmax = 27812, ymin = 7500, ymax = 8000,#27666	27812	ATP8 
+           alpha = .25,fill = "blue", )+annotate("text", x = (27666+27812)/2, y = 8800, label = "ATP8", size = 3) +
+  annotate("rect", xmin = 28487, xmax = 29266, ymin = 7500, ymax = 8000,#28487	29266	ATP6
+           alpha = .25,fill = "blue")+annotate("text", x = (28487+29266)/2, y = 8200, label = "ATP6", size = 3)+
+  annotate("rect", xmin = 36540, xmax = 43647, ymin = 7500, ymax = 8000, #36540	43647	COB
+           alpha = .25,fill = "blue")+annotate("text", x = (36540+43647)/2, y = 8300, label = "COB", size = 3)+
+  annotate("rect", xmin = 46723, xmax = 46953, ymin = 7500, ymax = 8000, #46723	46953	OLI1
+           alpha = .25,fill = "blue", )+annotate("text", x = (46723+46953)/2, y = 8800, label = "OLI1", size = 3) +
+  annotate("rect", xmin = 48901, xmax = 50097, ymin = 7500, ymax = 8000, #	VAR1
+           alpha = .25,fill = "blue")+annotate("text", x = (48901+50097)/2, y = 8200, label = "VAR1", size = 3)+
+  annotate("rect", xmin = 58009, xmax = 62447, ymin = 7500, ymax = 8000, #58009	62447	21S_RRNA 
+           alpha = .25,fill = "blue", )+annotate("text", x = (58009+62447)/2, y = 8300, label = "21S rRNA", size = 3) +
+  annotate("rect", xmin = 73758, xmax = 74513, ymin = 7500, ymax = 8000, #73758	74513	COX2 
+           alpha = .25,fill = "blue", )+annotate("text", x = (74513+73758)/2, y = 8300, label = "COX2", size = 3) +
+  annotate("rect", xmin = 79213, xmax = 80022, ymin = 7500, ymax = 8000,#79213	80022	COX3 
+           alpha = .25,fill = "blue")+annotate("text", x = (79213+80022)/2, y = 8700, label = "COX3", size = 3)+
+  annotate("rect", xmin = 85295, xmax = 85777, ymin = 7500, ymax = 8000,#85295	85777	RPM1
+           alpha = .25,fill = "blue", )+annotate("text", x = (85295+85777)/2, y = 8300, label = "RPM1", size = 3)+
+  labs(x="Yeast Mitochondrial Reference Genome (bases)", y="", size = 15)  
+
+mito_Cu=mito_weird %>%
+  filter(E1 %in% c("Cu", "YPAD")) %>%
+  ggplot(aes(x=pos,y=cov)) +
+  geom_point(alpha=0.8, size=0.75,aes(colour=strain)) +
+  scale_color_manual(legend_strain, values=petiteCopper) +
+  theme_bw()+
+  ylim(0,9000)+
+  theme(legend.key.height = unit(0.25, "cm"))+
+  annotate("rect", xmin = 6546, xmax = 8194, ymin = 7500, ymax = 8000,
+           alpha = .25,fill = "blue", )+annotate("text", x = (6546+8194)/2, y = 8300, label = "15S rRNA", size = 3) +
+   annotate("rect", xmin = 13818, xmax = 26701, ymin = 7500, ymax = 8000,#13818	26701	COX1 
+           alpha = .25,fill = "blue", )+annotate("text", x = (13818+26701)/2, y = 8300, label = "COX1", size = 3) +
+  annotate("rect", xmin = 27666, xmax = 27812, ymin = 7500, ymax = 8000,#27666	27812	ATP8 
+           alpha = .25,fill = "blue", )+annotate("text", x = (27666+27812)/2, y = 8800, label = "ATP8", size = 3) +
+  annotate("rect", xmin = 28487, xmax = 29266, ymin = 7500, ymax = 8000,#28487	29266	ATP6
+           alpha = .25,fill = "blue")+annotate("text", x = (28487+29266)/2, y = 8200, label = "ATP6", size = 3)+
+  annotate("rect", xmin = 36540, xmax = 43647, ymin = 7500, ymax = 8000, #36540	43647	COB
+           alpha = .25,fill = "blue")+annotate("text", x = (36540+43647)/2, y = 8300, label = "COB", size = 3)+
+  annotate("rect", xmin = 46723, xmax = 46953, ymin = 7500, ymax = 8000, #46723	46953	OLI1
+           alpha = .25,fill = "blue", )+annotate("text", x = (46723+46953)/2, y = 8800, label = "OLI1", size = 3) +
+  annotate("rect", xmin = 48901, xmax = 50097, ymin = 7500, ymax = 8000, #	VAR1
+           alpha = .25,fill = "blue")+annotate("text", x = (48901+50097)/2, y = 8200, label = "VAR1", size = 3)+
+  annotate("rect", xmin = 58009, xmax = 62447, ymin = 7500, ymax = 8000, #58009	62447	21S_RRNA 
+           alpha = .25,fill = "blue", )+annotate("text", x = (58009+62447)/2, y = 8300, label = "21S rRNA", size = 3) +
+  annotate("rect", xmin = 73758, xmax = 74513, ymin = 7500, ymax = 8000, #73758	74513	COX2 
+           alpha = .25,fill = "blue", )+annotate("text", x = (74513+73758)/2, y = 8300, label = "COX2", size = 3) +
+  annotate("rect", xmin = 79213, xmax = 80022, ymin = 7500, ymax = 8000,#79213	80022	COX3 
+           alpha = .25,fill = "blue")+annotate("text", x = (79213+80022)/2, y = 8700, label = "COX3", size = 3)+
+  annotate("rect", xmin = 85295, xmax = 85777, ymin = 7500, ymax = 8000,#85295	85777	RPM1
+           alpha = .25,fill = "blue", )+annotate("text", x = (85295+85777)/2, y = 8300, label = "RPM1", size = 3)+
+  labs(x="", y="")  
+
+```
+
+
+
+Plot all mitochondrial coverage lines together
+```{r}
+
+mitoc=plot_grid(
+  mito_Cu, mito_Mn, mito_Ni, labels = c("","",""),
+  ncol = 1, align = "v"
+)
+#ggsave("figures/mito_coverage.jpeg", width=10, height=6, units = "in", dpi=700)
+```
+
+
+
+Plot everything together
+
+```{r}
+
+plot_grid(
+  both_pet,mitoc,  labels = c("","C"),
+  ncol = 1, align = "v", rel_heights = c(1,2.5)
+)
+
+plot_grid(
+  both_pet,mito_All,  labels = c("","C"),
+  ncol = 1, align = "v", rel_heights = c(1,1.5)
+)
+ggsave("figures/petites_mito_cov.jpeg", width=7, height=8, units = "in", dpi=700)
+
+```
+
+
+
+
+
+## gene coordinates for mitochondrion
+15S_rRNA	chrmt	6546	8194	15S_RRNA 
+Q0050	chrmt	13818	16322	AI1 
+Q0055	chrmt	13818	18830	AI2 
+Q0060	chrmt	13818	19996	AI3 
+Q0065	chrmt	13818	21935	AI4 
+Q0070	chrmt	13818	23167	AI5_ALPHA 
+Q0045	chrmt	13818	26701	COX1 
+Q0075	chrmt	24156	25255	AI5_BETA 
+Q0080	chrmt	27666	27812	ATP8 
+Q0085	chrmt	28487	29266	ATP6 
+Q0110	chrmt	36540	38579	BI2 
+Q0115	chrmt	36540	40265	BI3 
+Q0120	chrmt	36540	42251	BI4 
+Q0105	chrmt	36540	43647	COB 
+Q0130	chrmt	46723	46953	OLI1 
+Q0140	chrmt	48901	50097	VAR1 
+21S_rRNA	chrmt	58009	62447	21S_RRNA 
+Q0160	chrmt	61022	61729	SCEI 
+Q0250	chrmt	73758	74513	COX2 
+Q0275	chrmt	79213	80022	COX3 
+RPM1	chrmt	85295	85777	RPM1 
+
+

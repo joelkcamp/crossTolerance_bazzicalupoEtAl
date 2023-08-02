@@ -1,0 +1,115 @@
+---
+title: "raw_OD"
+output: html_document
+date: '2023-06-03'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(cowplot)
+library(viridis)
+library(stats) #variance function
+library(readr) #readcsv
+library("FactoMineR")
+library("factoextra")
+library(wesanderson)
+library(ggplot2)
+
+```
+
+```{r files}
+# Set working directory to where script files live
+# set wd
+x = getwd()
+setwd(x)
+setwd("~/Dropbox/ottoLabNotes/cross_tol_data/raw_OD/")
+source("~/Dropbox/ottoLabNotes/cross_tol_data/bioscreen_functions.R")
+
+# Pathway to folder where bioscreen output and codes files live 
+folder <- "~/Dropbox/ottoLabNotes/cross_tol_data/raw_OD/"
+
+# conc = evolved 'home' and metal = test environment
+# remove batch 8 from machine 2 since the oly77 didn't work
+#List codes and data files 
+code_list <-  list.files(path = folder, recursive = TRUE, full.names = FALSE,pattern = "codes")
+data_list <-  list.files(path = folder, recursive = TRUE, full.names = FALSE,pattern = "data")
+
+# Read each file in list 
+data_read <-  lapply(data_list, read.csv)
+code_read <-  lapply(code_list, read.csv)
+```
+
+
+```{r dataframes}
+
+setwd("~/Dropbox/ottoLabNotes/cross_tol_data/")
+
+# Create dataframe codes
+
+code_df <- bind_rows(code_read) %>% #bind code files by column
+  as.data.frame() #%>% #create dataframe        
+write.csv(code_df, file = 'mbm_intermediate_files/code_df_MBM.csv') #save dataframe
+
+
+# add 100 empty "blank" wells in codes file 
+# leave only one file with the Time column 
+# Create dataframe data
+data_df <- bind_cols(data_read) %>% #bind data files by column
+  as.data.frame() #%>% #create dataframe        
+
+# Transpose dataframe
+
+Time <- data_df$Time #remember row id
+bio2 <- as.data.frame(t(data_df[,-1])) #transpose dataframe
+colnames(bio2) <- Time #create column names  
+# check the dataframe
+write.csv(bio2, file = 'mbm_intermediate_files/cbio2_MBM.csv') #save dataframe
+
+# Combine the bioscreen output with metadata
+df = cbind(code_df, bio2)
+write.csv(df, file = 'mbm_intermediate_files/df_MBM.csv') #save dataframe
+
+```
+
+
+##OD measurments ++ added to the 'codes' dataframe 
+
+
+```{r OD measurements -> max growth}
+
+#df = read.csv(file = 'mbm_intermediate_files/df_MBM.csv')
+
+# on plate NI BIO1 left  there are systemically compromised OD measurements in time points 44.30.05 and 44.45.05
+# 
+# first noticed for line 2404 cdbm_37 NI BIO1 left well 104, OD measuarements of 5.4 etc., the loess function won't run properly if left in
+
+df = df[ ,-c(187,188)] # check depending on the df file
+
+# loop through dataframe, select OD measurements, use spline, recover the highest value for spline slope
+pdf("~/Dropbox/ottoLabNotes/cross_tol_data/figures/growth_curves_recip_trans.pdf", onefile = TRUE)
+par(mfrow = c(10,4))
+par(mar = c(0,0,0,0))
+par(cex=0.5, mai=c(0.1,0.2,0.1,0.1))
+for(r in 1:nrow(df)){
+  temp = as.numeric(df[r, 9:ncol(df)]) # depending if the file is imported... make sure that the number is the column you want to start measuring OD
+  time = seq(0.25, length(temp)/4, by = 0.25)
+  growth <- spline.slope(time, temp)
+  t <- spline(time, temp)
+  code_df$initOD[r] <- mean(temp[3:8]) # Arbitrary choice, first between 45 min and 2.5 hours
+  #code_df$OD_maxSlope[r] <- temp[which(time == t)]
+  code_df$finalOD[r] <- mean(temp[(length(temp)-5):length(temp)])
+  code_df$maxSlope[r] <- growth
+  #code_df$time_maxSlope[r] <- t
+  code_df$finalTime[r] <- length(temp)/4
+  plot(temp ~ time, xlim = c(0, 70), ylim = c(0, 1.5), xlab = "Time (h)", ylab = "OD")
+  text(5, 1, paste0(code_df$metal[r], " ", code_df$strain[r], "\nC ", code_df$conc[r],"\nr = ", round(growth, 3), "\ntime points\nlost: "), cex = 0.5)
+
+}  
+dev.off()
+
+# write a file with all the info so that you can just upload it for the next section without having to run this again
+write.csv(code_df, file = 'mbm_intermediate_files/max_growth_MBM.csv') #save dataframe
+
+
+```

@@ -1,0 +1,330 @@
+---
+title: "aneuploidy"
+output: html_document
+date: '2023-06-04'
+---
+
+
+File orgins
+the .csv files were produced with a perl script (windows.pl). windows.pl extracts the coverage from the pileup .txt file (obtained from individual bam files with the SamTools command 'mpileup') and averages across 1000 bp windows (blocks, not sliding)
+```{r}
+library(tidyverse)
+library(broom)
+library(Rmisc)
+library(ggthemes)
+library(viridis)
+library(ggplot2)
+library(data.table)
+library(formattable)
+library(tidyr)
+library(dplyr)
+library(cowplot)
+```
+
+Setting color palette
+```{r}
+relfitPalette <- c("#787878", "#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+petitePalette2 = c("white", "black")
+
+legend_title1 <- "Test\nEnvironment"
+legend_title2 <- "Petite"
+legend_title3 = "Evolution\nEnvironment"
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/Dropbox/ottoLabNotes/cross_tol_data/depth/10_DepthAnalyses/")
+require(stats)
+files <-list.files()
+#Reorder
+files<-c("1000OLY077_S101.csv","1000CdBM23_S1.csv","1000CdBM25_S10.csv","1000CdBM26_S18.csv","1000CdBM29_S26.csv","1000CdBM30_S34.csv","1000CdBM32_S42.csv","1000CdBM36_S50.csv","1000CdBM37_S58.csv","1000CdBM39_S2.csv","1000CdBM42_S11.csv","1000CdBM43_S19.csv","1000CdBM44_S27.csv","1000CdBM45_S35.csv","1000CdBM46_S43.csv","1000CdBM47_S51.csv","1000CdBM48_S59.csv","1000CoBM12_S4.csv","1000CoBM14_S13.csv","1000CoBM15_S21.csv","1000CoBM16_S29.csv","1000CoBM17_S37.csv","1000CoBM18_S45.csv","1000CoBM1_S3.csv","1000CoBM20_S53.csv","1000CoBM21_S61.csv","1000CoBM2_S12.csv","1000CoBM3_S20.csv","1000CoBM4_S28.csv","1000CoBM5_S36.csv","1000CoBM6_S44.csv","1000CoBM7_S52.csv","1000CoBM8_S60.csv","1000CuBM10_S54.csv","1000CuBM11_S62.csv","1000CuBM12_S6.csv","1000CuBM13_S15.csv","1000CuBM14_S23.csv","1000CuBM15_S31.csv","1000CuBM16_S39.csv","1000CuBM17_S47.csv","1000CuBM18_S55.csv","1000CuBM3_S5.csv","1000CuBM4_S14.csv","1000CuBM6_S22.csv","1000CuBM7_S30.csv","1000CuBM8_S38.csv","1000CuBM9_S46.csv","1000MnBM12_S63.csv","1000MnBM13_S7.csv","1000MnBM14_S16.csv","1000MnBM15_S24.csv","1000MnBM16_S32.csv","1000MnBM17_S40.csv","1000MnBM18_S48.csv","1000MnBM20_S56.csv","1000MnBM21_S64.csv","1000MnBM23_S8.csv","1000MnBM24_S17.csv","1000MnBM25_S25.csv","1000MnBM27_S33.csv","1000MnBM28_S41.csv","1000MnBM29_S49.csv","1000MnBM31_S57.csv","1000MnBM32_S65.csv","1000MnBM34_S66.csv","1000MnBM38_S72.csv","1000MnBM39_S78.csv","1000MnBM42_S84.csv","1000MnBM44_S90.csv","1000NiBM11_S73.csv","1000NiBM12_S79.csv","1000NiBM14_S85.csv","1000NiBM16_S91.csv","1000NiBM17_S97.csv","1000NiBM21_S103.csv","1000NiBM22_S109.csv","1000NiBM24_S68.csv","1000NiBM25_S74.csv","1000NiBM27_S80.csv","1000NiBM28_S86.csv","1000NiBM29_S92.csv","1000NiBM30_S98.csv","1000NiBM4_S96.csv","1000NiBM6_S102.csv","1000NiBM8_S108.csv","1000NiBM9_S67.csv","1000ZnBM11_S104.csv","1000ZnBM12_S110.csv","1000ZnBM15_S69.csv","1000ZnBM16_S75.csv","1000ZnBM17_S81.csv","1000ZnBM19_S87.csv","1000ZnBM22_S93.csv","1000ZnBM23_S99.csv","1000ZnBM25_S105.csv","1000ZnBM28_S111.csv","1000ZnBM29_S70.csv","1000ZnBM31_S76.csv","1000ZnBM34_S82.csv","1000ZnBM37_S88.csv","1000ZnBM38_S94.csv","1000ZnBM39_S100.csv","1000ZnBM41_S106.csv","1000ZnBM42_S112.csv","1000ZnBM43_S71.csv","1000ZnBM44_S77.csv","1000ZnBM45_S83.csv","1000ZnBM46_S89.csv","1000ZnBM47_S95.csv")
+
+num<-length(files)
+#chromosomes<-c("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16"); #wihtout mito
+chromosomes<-c("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16", "mito"); #wihtout mito
+
+exptlist <- c("W303","CdBM23","CdBM25","CdBM26","CdBM29","CdBM30","CdBM32","CdBM36","CdBM37","CdBM39","CdBM42","CdBM43","CdBM44","CdBM45","CdBM46","CdBM47","CdBM48","CoBM12","CoBM14","CoBM15","CoBM16","CoBM17","CoBM18","CoBM1","CoBM20","CoBM21","CoBM2","CoBM3","CoBM4","CoBM5","CoBM6","CoBM7","CoBM8","CuBM10","CuBM11","CuBM12","CuBM13","CuBM14","CuBM15","CuBM16","CuBM17","CuBM18","CuBM3","CuBM4","CuBM6","CuBM7","CuBM8","CuBM9","MnBM12","MnBM13","MnBM14","MnBM15","MnBM16","MnBM17","MnBM18","MnBM20","MnBM21","MnBM23","MnBM24","MnBM25","MnBM27","MnBM28","MnBM29","MnBM31","MnBM32","MnBM34","MnBM38","MnBM39","MnBM42","MnBM44","NiBM11","NiBM12","NiBM14","NiBM16","NiBM17","NiBM21","NiBM22","NiBM24","NiBM25","NiBM27","NiBM28","NiBM29","NiBM3","NiBM4","NiBM6","NiBM8","NiBM9","ZnBM11","ZnBM12","ZnBM15","ZnBM16","ZnBM17","ZnBM19","ZnBM22","ZnBM23","ZnBM25","ZnBM28","ZnBM29","ZnBM31","ZnBM34","ZnBM37","ZnBM38","ZnBM39","ZnBM41","ZnBM42","ZnBM43","ZnBM44","ZnBM45","ZnBM46","ZnBM47")
+
+
+#chromlengths<-c(230218	,813184,316620,1531933,576874,270161,1090940,562643,439888,745751,666816,1078177,924431,784333,1091291,948066)/10^6 # wihtout mitochondrion
+chromlengths<-c(230218	,813184,316620,1531933,576874,270161,1090940,562643,439888,745751,666816,1078177,924431,784333,1091291,948066, 85779)/10^6
+
+
+names(chromlengths)<-chromosomes
+
+centromerestart<-c(151465,238207,114385,449711,151987,148510,496920,105586,355629,436307,440129,150828,268031,628758,326584,555957)/10^6
+centromereend<-c(151582,238323,114501,449821,152104,148627,497038,105703,355745,436425,440246,150947,268149,628875,326702,556073)/10^6
+
+data<-list()
+for ( i in seq(1,num) ) {
+temp <- read.csv(files[i],header=T, as.is=TRUE)
+temp$CHR[temp$CHR == 'ref|NC_001133|'] <- 'chr1'
+temp$CHR[temp$CHR == 'ref|NC_001134|'] <- 'chr2'
+temp$CHR[temp$CHR == 'ref|NC_001135|'] <- 'chr3'
+temp$CHR[temp$CHR == 'ref|NC_001136|'] <- 'chr4'
+temp$CHR[temp$CHR == 'ref|NC_001137|'] <- 'chr5'
+temp$CHR[temp$CHR == 'ref|NC_001138|'] <- 'chr6'
+temp$CHR[temp$CHR == 'ref|NC_001139|'] <- 'chr7'
+temp$CHR[temp$CHR == 'ref|NC_001140|'] <- 'chr8'
+temp$CHR[temp$CHR == 'ref|NC_001141|'] <- 'chr9'
+temp$CHR[temp$CHR == 'ref|NC_001142|'] <- 'chr10'
+temp$CHR[temp$CHR == 'ref|NC_001143|'] <- 'chr11'
+temp$CHR[temp$CHR == 'ref|NC_001144|'] <- 'chr12'
+temp$CHR[temp$CHR == 'ref|NC_001145|'] <- 'chr13'
+temp$CHR[temp$CHR == 'ref|NC_001146|'] <- 'chr14'
+temp$CHR[temp$CHR == 'ref|NC_001147|'] <- 'chr15'
+temp$CHR[temp$CHR == 'ref|NC_001148|'] <- 'chr16'
+temp$CHR[temp$CHR == 'ref|NC_001224|'] <- 'mito'
+# Drop mito data
+#data[[i]] <- subset(temp,CHR != "ref|NC_001224|") #if dropping mito data
+data[[i]] =temp
+}
+
+
+```
+
+# By chromosome and location by chromosome, important for plotting spaghetti 
+```{r }
+
+databychromo<-list()
+locbychromo<-list()
+for ( i in seq(1,num) ) {
+temp<-data[[i]]
+tempmean<-mean(temp[,3])
+temp[,3]<-temp[,3]/tempmean
+databychromo[[i]] <- split(temp[,3], temp$CHR)
+locbychromo[[i]] <- split(temp[,2]/10^6, temp$CHR)
+}
+```
+
+# Plots by chromosome (4 experiments per plot)
+```{r }
+pdf("~/Dropbox/ottoLabNotes/cross_tol_data/figures/coverage_chrom.pdf", onefile = TRUE)
+#par(mfrow = c(10,4))
+for (j in seq(0,110,4)) {
+#quartz()
+op <- par(mfcol=c(4,4), mar=c(2.1, 2.5, .2, .2), oma=c(0, 0, 1.5, 0))
+for ( i in seq(1,16) ) { 
+plot(locbychromo[[j+1]][chromosomes[i]][[1]],databychromo[[j+1]][chromosomes[i]][[1]],type="l",xlab="",ylab="",ylim=c(0,2.5),las=1,col="black")
+points(locbychromo[[j+2]][chromosomes[i]][[1]],databychromo[[j+2]][chromosomes[i]][[1]],type="l",las=1,col="red")
+points(locbychromo[[j+3]][chromosomes[i]][[1]],databychromo[[j+3]][chromosomes[i]][[1]],type="l",las=1,col="blue")
+points(locbychromo[[j+4]][chromosomes[i]][[1]],databychromo[[j+4]][chromosomes[i]][[1]],type="l",las=1,col="green")
+points(mean(centromerestart[[i]],centromereend[[i]]),2.1,type="p",xlab="",ylab="",las=1,col="black")
+if (chromosomes[i] == "chr2") text(x=(311452+310565)/(2*10^6),y=2.22,"SCO1",cex=0.65)
+if (chromosomes[i] == "chr3") text(x=(91324+92418)/(2*10^6),y=2.22,"LEU2",cex=0.65)
+if (chromosomes[i] == "chr3") text(x=(198671+201177)/(2*10^6),y=2.22,"MAT",cex=0.65)
+if (chromosomes[i] == "chr5") text(x=(116167+116970)/(2*10^6),y=2.22,"URA3",cex=0.65)
+if (chromosomes[i] == "chr8") text(x=(212535+214718)/(2*10^6),y=2.16,"CUP1",cex=0.65)
+if (chromosomes[i] == "chr8") text(x=(239098+241293)/(2*10^6),y=2.28,"ERG7",cex=0.65)
+if (chromosomes[i] == "chr12") text(x=(732542+733876)/(2*10^6),y=2.22,"MET15",cex=0.65)
+if (chromosomes[i] == "chr12") text(x=(253861+254958)/(2*10^6),y=2.22,"ERG3",cex=0.65)
+if (chromosomes[i] == "chr12") text(x=(467569+460712)/(2*10^6),y=2.28,"RDN1",cex=0.65)
+if (chromosomes[i] == "chr12") text(x=(467569+460712)/(2*10^6),y=2.16,"repeat",cex=0.65)
+if (chromosomes[i] == "chr13") text(x=(252990+251839)/(2*10^6),y=2.22,"ERG6",cex=0.65)
+if (chromosomes[i] == "chr13") text(x=(302485+300869)/(2*10^6),y=2.34,"ERG5",cex=0.65)
+if (chromosomes[i] == "chr15") text(x=(721946+722608)/(2*10^6),y=2.22,"HIS3",cex=0.65)
+legend("topright", chromosomes[[i]],bty="n")
+legend("bottomleft", c(exptlist[[j+1]],exptlist[[j+2]]), fill=c("black","red"),bty="n")
+legend("bottomright", c(exptlist[[j+3]],exptlist[[j+4]]), fill=c("blue","green"),bty="n")
+}
+}
+dev.off()
+
+```
+
+```{r }
+chr_avg = data.frame()
+for (j in seq(0,110)) {
+for (i in seq(1,16) ) {
+  something = mean(databychromo[[j+1]][chromosomes[i]][[1]])
+  anotherthing = c(exptlist[j+1], chromosomes[i][[1]], something)
+  chr_avg = rbind(chr_avg, anotherthing)
+}
+}
+colnames(chr_avg) = c("strain","chr","cov")
+write.csv(chr_avg, "~/Dropbox/ottoLabNotes/cross_tol_data/depth/chr_avg.csv")
+
+```
+
+
+Make summary table of whole chromosome duplications
+Formattable does not export as a figure, so we did the dirty thing of taking a screen shot. Bite me.
+```{r }
+
+i1 <- read.csv("~/Dropbox/ottoLabNotes/cross_tol_data/depth/whole_chrom_dups.csv")
+
+whole_gen_dup = formattable(i1, list(area(col = Cd.37:Cd.45) ~ color_tile("transparent", "#FF9A17"),
+                     area(col = Co.2) ~ color_tile("transparent","#3B83FF"),
+                     #area(col = Cu.8) ~ color_tile("transparent","#3EFF3B"),
+                     area(col = Mn.14:Mn.39) ~ color_tile("transparent","#FD73FF"),
+                     area(col = Ni.6:Ni.29) ~ color_tile("transparent","#FFE200"),
+                     area(col = Zn.19:Zn.47) ~ color_tile("transparent","#A880FF") # add zn47
+                     ))
+
+#class(whole_gen_dup)
+
+whole_gen_dup
+
+```
+
+```{r}
+setwd("~/Dropbox/ottoLabNotes/cross_tol_data")
+mydata3 = read.csv("mbm_intermediate_files/mydata3.csv")
+mydata6 = mydata3 %>% 
+  select(strain, E1, E2, maxSlope, anc_slope) %>% 
+  arrange(strain, E1, E2) %>% 
+  group_by(strain, E1, E2, anc_slope) %>% 
+  dplyr::summarise(avg_slope = mean(maxSlope)) %>% 
+  mutate(relfit1 = avg_slope - anc_slope) 
+
+```
+
+```{r}
+mbm_rf = mydata6
+
+mbm_rf$ploidy = NA
+
+mbm_rf <- mbm_rf %>% 
+  mutate(ploidy = case_when(strain == "cdbm_37" ~ ">N",
+                        strain == "cdbm_39" ~ ">N",
+                        strain == "cubm_43" ~ ">N",
+                        strain == "cubm_44" ~ ">N",
+                        strain == "cubm_45" ~ ">N",
+                        strain == "cobm_2" ~ ">N",
+                        strain == "mnbm_14" ~ ">N",
+                        strain == "mnbm_39" ~ ">N",
+                        strain == "nibm_6" ~ ">N",
+                        strain == "nibm_8" ~ ">N",
+                        strain == "nibm_12" ~ ">N",
+                        strain == "nibm_14" ~ ">N",
+                        strain == "nibm_16" ~ ">N",
+                        strain == "nibm_29" ~ ">N",
+                        strain == "znbm_19" ~ ">N",
+                        strain == "znbm_23" ~ ">N",
+                        strain == "znbm_29" ~ ">N",
+                        strain == "znbm_38" ~ ">N",
+                        strain == "znbm_39" ~ ">N",
+                        strain == "znbm_41" ~ ">N",
+                        strain == "znbm_43" ~ ">N",
+                        strain == "znbm_47" ~ ">N",
+                        )) 
+mbm_rf[is.na(mbm_rf)] <- "N"
+
+mbm_summary1 <- mbm_rf %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c( "E2", "ploidy"))
+
+```
+
+CBM relative fitnesses (measured by us) and aneuploidy based on Gerstein et al. (2015) Table 1
+
+```{r }
+cbm_rf = read_csv("depth/cbm_relfit.csv")
+# concentration 1 is the lethal concentration and concentration 2 is the sublethal
+
+cbm_rf <- cbm_rf %>% 
+  mutate(conc = case_when(conc == "YPAD" ~ ".YPAD",
+                        conc == "CD1" ~ "Cd",
+                        conc == "CO1" ~ "Co",
+                        conc == "CU1" ~ "Cu",
+                        conc == "MN1" ~ "Mn",
+                        conc == "NI1" ~ "Ni",
+                        conc == "ZN1" ~ "Zn",
+                        )) %>% 
+  na.omit() %>%
+  select(strain, conc, Mean, r_anc, rel_fit)
+
+colnames(cbm_rf) <- c('strain','E2','avg_slope','anc_slope','relfit1')
+
+cbm_rf$ploidy = NA
+
+cbm_rf <- cbm_rf %>% 
+  mutate(ploidy = case_when(strain == "CBM7" ~ ">N",
+                        strain == "CBM29" ~ ">N",
+                        strain == "CBM22" ~ ">N",
+                        strain == "CBM21" ~ ">N",
+                        strain == "CBM26" ~ ">N",
+                        strain == "CBM2" ~ ">N",
+                        strain == "CBM3" ~ ">N",
+                        strain == "CBM11" ~ ">N",
+                        strain == "CBM30" ~ ">N",
+                        strain == "CBM20" ~ ">N",
+                        )) 
+cbm_rf[is.na(cbm_rf)] <- "N"
+
+cbm_summary1 <- cbm_rf %>% 
+  #filter(E2!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c( "E2", "ploidy"))
+
+```
+
+Plot aneuploidy against max growth rate for Aleeza's CBM lines and ours
+```{r }
+plot_mbm=mbm_rf %>%
+  na.omit() %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=ploidy)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=ploidy)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=mbm_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values=petitePalette2) +
+    #scale_fill_manual(legend_title_none, limits = c("Non-petite (n = 70)", "Petite (n =38)"),labels = c("Grande (n = 70)", "Petite (n = 38)"), values=petitePalette2) +
+    labs(x="Test Environment", y="Relative Fitness") +
+    theme_bw() +  geom_hline(yintercept=0, size=1)+
+    theme(legend.title=element_text(size=rel(0.75))) +
+    geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+
+
+plot_cbm=cbm_rf %>%
+  na.omit() %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=ploidy)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=ploidy)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=cbm_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values=petitePalette2) +
+    #scale_fill_manual(legend_title_none, limits = c("Non-petite (n = 70)", "Petite (n =38)"),labels = c("Grande (n = 70)", "Petite (n = 38)"), values=petitePalette2) +
+    labs(x="Test Environment", y="Relative Fitness") +
+    theme_bw() +  geom_hline(yintercept=0, size=1)+
+    theme(legend.title=element_text(size=rel(0.75))) +
+    geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+
+plot_grid(
+  plot_cbm, plot_mbm, labels = c("A","B"),
+  ncol = 1, align = "v"
+)
+ggsave("figures/ploidy_relfit_suppl.jpeg", width=10, height=6, units = "in", dpi=700)
+
+
+```
+
+CUP coverage against relative fitness in copper
+```{r}
+
+cu_rel_fit = read_csv("depth/cu_rel_fit.csv")
+df_cup = read_csv("depth/cup_cov_relfit.csv")
+plot_cup=ggplot(df_cup, aes(x=CUP, y=relfit1, color=E1)) +
+  geom_point(size=4) +
+  theme_bw() +
+  scale_color_manual(legend_title3, values=relfitPalette)+
+    labs(x="CUP scaled coverage", y="Relative Maximum Growth in Cu")
+ggsave("figures/CUPcov_testcopper.jpeg", width=10, height=5, units = "in", dpi=1000)
+
+```
+
+
+

@@ -1,0 +1,12 @@
+
+
+# template of the command
+
+perl window.pl *.pileup.txt 1000*.csv 1000
+
+# perl script takes mpileup files from SamTools (used to me sam files, but now the mpileup uses bam files)
+
+#then i wanted to run it for just a few petites that have not lost the whole mitochondrion on 100 windows, specified at the end
+
+perl window.pl *.pileup.txt 1000*.csv 100
+

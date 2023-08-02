@@ -1,0 +1,100 @@
+COMPONENT	GENE
+nucleus	CDC25
+nucleus	FZF1
+nucleus	HUL5
+nucleus	KTR3
+nucleus	LOS1
+nucleus	NSR1
+nucleus	PDR1
+nucleus	PHO81
+nucleus	PTK2
+nucleus	RKM3
+nucleus	ROG1
+nucleus	RRP6
+nucleus	SET2
+nucleus	SHP1
+nucleus	SNT2
+nucleus	STE5
+nucleus	GCD2
+nucleus	YHC1
+nucleus	TFG1
+cytoplasm	ABP1
+cytoplasm	CDC25
+cytoplasm	GPB1
+cytoplasm	HUL5
+cytoplasm	KTR3
+cytoplasm	LOS1
+cytoplasm	OCA4
+cytoplasm	PHO81
+cytoplasm	PTK2
+cytoplasm	ROG1
+cytoplasm	SAK1
+cytoplasm	SHP1
+cytoplasm	SNT2
+cytoplasm	STE5
+membrane	ACC1
+membrane	BSD2
+membrane	CDC25
+membrane	FCY2
+membrane	KTR3
+membrane	PMA1
+membrane	RCE1
+membrane	SYG1
+membrane	VCX1
+membrane	VTC1
+membrane	NFT1
+plasma membrane	CDC25
+plasma membrane	FCY2
+plasma membrane	GPB1
+plasma membrane	HBT1
+plasma membrane	PHO84
+plasma membrane	PMA1
+plasma membrane	PTK2
+plasma membrane	STE5
+plasma membrane	SYG1
+plasma membrane	YPK1
+vacuole	BSD2
+vacuole	FCY2
+vacuole	KTR3
+vacuole	PHO84
+vacuole	SYG1
+vacuole	VCX1
+vacuole	VTC1
+vacuole	NFT1
+mitochondrion	ACC1
+mitochondrion	COX1
+mitochondrion	ISU1
+mitochondrion	LOS1
+mitochondrion	NSR1
+mitochondrion	PMA1
+mitochondrion	SMC2
+mitochondrion	SYG1
+endoplasmic reticulum	ACC1
+endoplasmic reticulum	BSD2
+endoplasmic reticulum	CDC25
+endoplasmic reticulum	KRE5
+endoplasmic reticulum	PHO84
+endoplasmic reticulum	RCE1
+endoplasmic reticulum	VTC1
+site of polarized growth	ABP1
+site of polarized growth	BNI4
+site of polarized growth	SSK2
+site of polarized growth	STE5
+site of polarized growth	YPK1
+cell cortex	ABP1
+cell cortex	BNI4
+cell cortex	SSK2
+cellular bud	BNI4
+cellular bud	SSK2
+cellular bud	YPK1
+nucleolus	NSR1
+nucleolus	RRP6
+nucleolus	UTP8
+cytoskeleton	ABP1
+cytoskeleton	BNI4
+chromosome	SMC2
+cell wall	FIG2
+exosome	RRP46
+Golgi transport complex	COG1
+unknonwn	DUS4
+unknonwn	YEF1

@@ -1,0 +1,81 @@
+---
+title: "electrode_potential"
+output: html_document
+date: '2022-12-08'
+---
+
+
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(gtools)
+library(tidyr)
+library(broom)
+library(rsq)
+library(performance)
+
+x = getwd()
+setwd(x)
+```
+
+
+Electrode potentials
+
+```{r make dataframe with electrode potentials of metals}
+metal = c("Cd","Co","Cu","Mn","Ni", "Zn")
+  
+#el_pot = c(-0.403,-0.277,0.3419,-1.185,-0.257,-0.7618) #values from electrode potential series table
+el_pot = c(0.3177,0.3182,0.3499,0.3233,0.3236,0.3246) #preliminary Eh values from ORP
+met_el_pot = data.frame(metal, el_pot)
+
+# loop through combinations to get the difference, take difference between the electrode potentials
+
+x<-c("Cd","Co","Cu","Mn","Ni","Zn")
+electrode_pot_comb <- data.frame(combinations(n=6,r=2,v=x,repeats.allowed=FALSE)) 
+colnames(electrode_pot_comb)[1]  <- "met1"
+colnames(electrode_pot_comb)[2]  <- "met2"
+
+electrode_pot_comb['ORP'] <- NA
+
+
+count = c(2, 3, 4, 5, 6, 3,4,5,6,4,5,6,5,6,6)
+count2 = c(1,1,1,1,1,2,2,2,2,3,3,3,4,4,5)
+n = 1
+for(r in 1:nrow(electrode_pot_comb)){
+  x = count[[n]]
+  y = count2[[n]]
+  #el_diff = (1-(abs(met_el_pot[[y,2]] - met_el_pot[[x,2]]))) #absolute difference between metal reactivity, 1- absolute difference to expect a positive relationship with relative fitness. more fit with values that are closer # so that larger numbers are more pleiotropy and smaller numbers are less pleiotropy
+  #electrode_pot_comb$sim[r] = el_diff #difference
+  el_diff = abs(met_el_pot[[y,2]] - met_el_pot[[x,2]])
+  electrode_pot_comb$ORP[r] = el_diff #difference
+  n = n+1
+}
+
+#how do i transform the distance so that it's reversed? 1- absolute difference 
+
+electrode_pot_comb$combo <- c("CdCo","CdCu","CdMn","CdNi","CdZn","CoCu","CoMn","CoNi","CoZn","CuMn","CuNi","CuZn","MnNi","MnZn","NiZn")
+write_csv(electrode_pot_comb, "ele_pot.csv")
+# elect_pot_both changes 1- ORP to get a measure of the similarity between environemtns as opposed to difference
+```
+
+
+
+Make dataframe with ppm of metals in YPAD 
+Average across all the samples with no excess of that metal.
+YPD is the "ecology" of our yeast
+Hypothesis: the amount of metal the yeast is generally exposed to will predict the quality of the environment (by quality I mean if excess will lead to specialized mutations or general mutations), OR the more of the metal in the media, the more specialized the mutations will be and less cross tolerance
+
+```{r }
+metal = c("Cd","Co","Cu","Mn","Ni", "Zn")
+ppm = c(0.01,0.01,0.02,0.04,0.03,1.74) #ppm in growth media
+met_ppm = data.frame(metal, ppm)
+write_csv(met_ppm, "met_ppm.csv")
+
+
+```
+
+
+
+
+

@@ -1,0 +1,343 @@
+---
+title: "mel_vcf_cleaning_haploidformat"
+output: html_document
+date: '2023-04-14'
+---
+
+```{r}
+library(tidyverse)
+library(viridis)
+library(vcfR)
+x = getwd()
+setwd(x)
+name_codes = read_csv("code_strain_line.csv")
+```
+
+# Quality control
+
+```{r}
+
+mel_raw0 <- read.table("snps/full_genome.table", header=TRUE)
+
+p1 <- ggplot(mel_raw0, aes(x=QD)) + geom_density()
+p2 <- ggplot(mel_raw0, aes(x=FS)) + geom_density()
+p3 <- ggplot(mel_raw0, aes(x=SOR)) + geom_density()
+p4 <- ggplot(mel_raw0, aes(x=MQ)) + geom_density()
+p5 <- ggplot(mel_raw0, aes(x=MQRankSum)) + geom_density()
+p6 <- ggplot(mel_raw0, aes(x=ReadPosRankSum)) + geom_density()
+
+p1
+p2
+p3
+p4
+p5
+p6
+
+#removing low quality sites
+#changed QUAL > 1000 to QD > 4, FS < 200, SOR < 5, MQ > 50, MQRaknSum > -5, ReadPosRankSum > -7.5 
+
+mel_raw00 <- mel_raw0 %>% 
+  filter(QD > 4)
+mel_raw00 <- mel_raw00 %>% 
+  filter(FS < 50)
+mel_raw00 <- mel_raw00 %>% 
+  filter(SOR < 4)
+mel_raw00 <- mel_raw00 %>% 
+  filter(MQ > 50)
+mel_raw00 <- mel_raw00 %>%
+  filter(is.na(MQRankSum) | MQRankSum > -5)
+mel_raw00 <- mel_raw00 %>%
+  filter(is.na(ReadPosRankSum) | ReadPosRankSum > -7.5)
+  
+
+#removing sites with alignment issues causing multiple alternates
+mel_raw00 <- mel_raw00 %>% 
+  filter(!grepl(",", ALT))
+
+#mel_raw00[] <- lapply(mel_raw00, function(x) gsub(".:0,0", "missing:missing:0", x))
+
+mel_filtered0 <- mel_raw00 %>% 
+  mutate(across(ends_with(".DP"), ~if_else(get(str_replace(cur_column(), "\\.DP", ".GT")) == ".", 0, .)))
+
+mel_filtered <- mel_filtered0 %>% 
+  select(names(mel_filtered0)[1:13], sort(names(mel_filtered0)[-(1:13)])) %>% 
+  mutate(across(ends_with(".GT"), ~if_else(get(str_replace(cur_column(), ".GT", ".DP")) < 5, "low coverage", .))) %>% 
+  select(-contains(".DP"))
+
+for(i in 1:nrow(mel_filtered)) {
+  for(j in 14:ncol(mel_filtered)) {
+    if(mel_filtered[i,5] == mel_filtered[i,j]) {
+      mel_filtered[i,j] = 1
+    } else if (mel_filtered[i,j] == "low coverage") {
+      
+    } else {
+      mel_filtered[i,j] = 0
+    }
+  }
+}
+
+colnames(mel_filtered)<-gsub(".GT","",colnames(mel_filtered))
+
+```
+
+## Cleaning up data
+
+```{r}
+#I need to change the chromosome name format to something easier to read
+mel_chr <- mel_filtered %>% 
+  mutate(chr=case_when(grepl("001133", CHROM) ~"chr1",
+                       grepl("001134", CHROM) ~"chr2",
+                       grepl("001135", CHROM) ~"chr3",
+                       grepl("001136", CHROM) ~"chr4",
+                       grepl("001137", CHROM) ~"chr5",
+                       grepl("001138", CHROM) ~"chr6",
+                       grepl("001139", CHROM) ~"chr7",
+                       grepl("001140", CHROM) ~"chr8",
+                       grepl("001141", CHROM) ~"chr9",
+                       grepl("001142", CHROM) ~"chr10",
+                       grepl("001143", CHROM) ~"chr11",
+                       grepl("001144", CHROM) ~"chr12",
+                       grepl("001145", CHROM) ~"chr13",
+                       grepl("001146", CHROM) ~"chr14",
+                       grepl("001147", CHROM) ~"chr15",
+                       grepl("001148", CHROM) ~"chr16",
+                       grepl("001224", CHROM) ~"chrmt"),
+         .after = CHROM) %>% 
+  select(-CHROM)
+
+#Now I have to reorder the levels so they're not in the default alphabetical order
+mel_chr$chr <- as.factor(mel_chr$chr)
+levels(mel_chr$chr)
+mel_chr$chr <- factor(mel_chr$chr, levels=c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chrmt"))
+
+#Checking to see if I can delete some unecessary columns. They're unecessary because they have the same value in every row.
+levels(mel_chr$ID)
+levels(mel_chr$FILTER)
+
+#removing columns where values in all rows are the same
+mel_chr <- mel_chr %>% 
+  select(-ID) %>% 
+  select(-FILTER)
+
+cols_to_check0 <- colnames(mel_chr)
+cols_to_check <- cols_to_check0[-(1:11)]
+num_lines <- as.data.frame(cols_to_check) %>% 
+  mutate(metal = case_when(grepl("Cd", cols_to_check) ~"Cd",
+                           grepl("Co", cols_to_check) ~"Co",
+                           grepl("Cu", cols_to_check) ~"Cu",
+                           grepl("Mn", cols_to_check) ~"Mn",
+                           grepl("Ni", cols_to_check) ~"Ni",
+                           grepl("Zn", cols_to_check) ~"Zn",
+                           grepl("OLY", cols_to_check) ~"ancestor",)) %>% 
+  group_by(metal) %>% 
+  count()
+```
+
+```{r}
+#further filtering
+#let's look at the quality 
+hist(log10(mel_raw0$QUAL), breaks=100, main="", xlab="log(Genotype Quality)")
+abline(v=log10(1000), col="red")
+#I'm gonna filter out QUAL<1000 at the beginning UPDATE: this step has been removed and new filtering procedures have been implemented
+```
+
+## Cleaning up data part 2
+
+```{r}
+#Now I will remove any sites where all lines have the same genotype
+mel_RMancestral <- mel_chr %>%
+  filter_at(vars(cols_to_check), any_vars((. != CdBM23_S1)))
+
+#This is removing all sites where there are no instances of 0
+
+#mel_subset0 <- mel_RMancestral[apply(mel_RMancestral[, 10:116], 1, function(x) any(grepl("0", x))), ]
+
+#UPDATE: Not sure if this filtering is necessary
+mel_RMancestral <- mel_RMancestral %>%
+  filter(rowSums(across(everything(), ~ str_detect(., "low coverage"))) <= 50)
+
+#This is changing all data that matches the OLY077 column to "w303" so they can be marked as ancestral
+match_col <- "OLY077_S101"
+mel_RMancestral[] <- lapply(mel_RMancestral, function(x) ifelse(x == mel_RMancestral[[match_col]], "w303", x))
+
+mel_RMancestral$chr <- sub("^", "chr", mel_RMancestral$chr)
+mel_RMancestral[] <- lapply(mel_RMancestral, function(x) gsub("chr17", "chrmt", x))
+
+#This is removing all sites where there are no instances of 1|1
+mel_subset <- mel_RMancestral[apply(mel_RMancestral[, 12:121], 1, function(x) any(grepl("1", x))), ]
+mel_subset_test <- mel_subset[apply(mel_subset[, 12:121], 1, function(x) any(grepl("0", x))), ]
+
+
+
+#This is to get what sites to annotate
+sites_to_check0 <- data.frame(matrix(nrow=406,ncol=1)) # AB changed to 347 from 268
+sites_to_check0$key <- paste(mel_subset$chr, mel_subset$POS, sep="_")
+sites_to_check <- sites_to_check0 %>% 
+  select(key) %>% 
+  separate(key, into = c("chr", "POS"), sep="_") 
+sites_to_check %>% 
+  write.csv("snps/sites_list_subset0.csv")
+  
+```
+
+# Annotating genes
+no00remove has 79 evo lines
+no00keep has 107 evo lines
+
+```{r}
+annot <- read.csv("snps/sites_list_subset_ANNOT.csv") %>% 
+  rename("chr"="CHR") %>% 
+  arrange(chr, POS)
+
+mel_subset$POS <- as.integer(mel_subset$POS)
+
+mel_mut <- mel_subset %>% 
+  pivot_longer(cols=CdBM23_S1:ZnBM47_S95, names_to = "evo_line", values_to = "genotype") %>% 
+  filter(genotype=="1") %>% 
+  mutate(metal = case_when(grepl("Cd", evo_line) ~"Cd",
+                           grepl("Co", evo_line) ~"Co",
+                           grepl("Cu", evo_line) ~"Cu",
+                           grepl("Mn", evo_line) ~"Mn",
+                           grepl("Ni", evo_line) ~"Ni",
+                           grepl("Zn", evo_line) ~"Zn")) %>% 
+   arrange(chr,POS,metal)
+
+mel_mut_annot <- left_join(mel_mut, annot, by = c('chr', 'POS')) %>% 
+  #replace(is.na(.), 0) %>% 
+  select(-c(FUNCTION:X.7)) %>% 
+  filter(GENE!="NAG") %>% 
+  relocate(GENE, .after=ALT) %>% 
+  # These next two steps remove unknown or putative areas
+  filter(!str_starts(GENE, "-")) %>% 
+  filter(!str_starts(GENE, " -")) %>% 
+  # These next few steps are removing genes from families that cause alignment issues
+  filter(!grepl("FLO1", GENE)) %>% 
+  filter(!grepl("FLO9", GENE)) %>% 
+  # reorder columns
+  relocate(gene_code, .before = GENE) %>% 
+  relocate(metal, .before = evo_line) %>% 
+  select(-genotype) #%>% 
+ # write.csv("snps/mutations_haploid.csv")
+
+mel_mut_annot$GENE_abbrev <- str_extract(mel_mut_annot$GENE, "^.*(?= - )")
+mel_mut_annot <- mel_mut_annot %>% 
+  relocate(GENE_abbrev, .before=GENE)
+
+mel_mut_annot %>% 
+  filter(evo_line!="MnBM42_S84") %>% 
+  ggplot(aes(x=GENE_abbrev, fill=metal)) +
+  geom_bar(stat="count") +
+  theme(axis.text.x = element_text(angle=90))
+ggsave("figures/genes_mnbm42inc.jpeg", width=8, height=6, units = "in", dpi=700)
+
+mel_mut_annot$SNP <- paste(mel_mut_annot$GENE_abbrev, "_", mel_mut_annot$POS)
+
+mel_mut_annot %>% 
+  filter(evo_line!="MnBM42_S84") %>% 
+  ggplot(aes(x=SNP, fill=metal)) +
+  geom_bar(stat="count") +
+  scale_fill_manual(values=c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")) +
+  theme(axis.text.x = element_text(angle=90))
+ggsave("figures/genes_mel_mut_annot.jpeg", width=8, height=6, units = "in", dpi=700)
+
+distinct_genes <- mel_mut_annot %>% group_by(GENE) %>% summarise(distinct_genes = n_distinct(GENE)) %>% # AB changed mel_mut_no00remove_annot to mel_mut_annot
+  select(GENE) 
+distinct_genes$GENE_abbrev <- str_extract(distinct_genes$GENE, "^.*(?= - )")
+distinct_genes %>% write.csv("snps/distinct_genes_5DP.csv")
+
+```
+#Fitness for strains -> cross tolerance per strain
+#clean of unreliable genes
+#combine the SNP mutations and cross-tolerance
+
+```{r }
+fit.strain = read_csv("mbm_intermediate_files/mydata6.csv")
+gene.pres.all = read_csv("snps/mutations_haploid.csv")
+# match codes first to the gene.pres
+
+ # remove most common genes after checking
+ # These next few steps are removing genes from families that cause alignment issues
+gene.pres = gene.pres.all %>%
+  filter(!grepl("PIR3", GENE)) %>% 
+  filter(!grepl("TIR1", GENE)) %>% 
+  filter(!grepl("MSS11", GENE)) %>% 
+  filter(!grepl("ENA5", GENE)) %>% 
+  filter(!grepl("DAN4", GENE)) %>% 
+  filter(!grepl("BSC1", GENE)) %>% 
+  filter(!grepl("AAD4", GENE)) 
+# match codes first to the gene.pres
+#gene.pres$code_2 <- name_codes$code_2[match(gene.pres$strain,name_codes$code_0)]
+gene.pres$code_2 <- name_codes$code_2[match(gene.pres$evo_line,name_codes$code_1)]
+
+# cross.tolerance add to the gene/snp data
+fit.strain_summary <- fit.strain %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E1!=".YPAD") %>% 
+  filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("strain"))
+gene.pres$cross.tolerance = fit.strain_summary$relfit1[match(gene.pres$code_2,fit.strain_summary$strain)]
+
+
+```
+
+
+# add no. mutations vs. cross tolerance
+
+Match the dataframes
+```{r }
+# gene abbreviation
+gene.pres$GENE_abbrev <- str_extract(gene.pres$GENE, "^.*(?= - )")
+
+# add the genes to the fitness data
+fit.strain$gene = gene.pres$GENE_abbrev[match(fit.strain$strain,gene.pres$code_2)]
+
+# merge chromosome and position
+gene.pres$SNP_pos <- paste(gene.pres$chr, "_", gene.pres$POS)
+
+# add the snps to the fitness data
+fit.strain$snp = gene.pres$SNP_pos[match(fit.strain$strain,gene.pres$code_2)]
+
+# select a subset of the info
+fit.cross.mut = fit.strain %>% 
+  filter(E1!=".YPAD") %>%
+  select(strain,E1,gene,snp) %>% 
+  distinct()
+
+# add the other types of mutations under "snp"
+ploid.mut = read_csv("snps/mutations_other.csv")
+fit.cross.mut = rbind(fit.cross.mut,ploid.mut)
+
+# add the cross.tolerance to the fitness data
+fit.cross.mut$cross.tolerance = fit.strain_summary$relfit1[match(fit.cross.mut$strain,fit.strain_summary$strain)]
+
+
+# count snps per line, one per line (mutations?)
+fit.cross.mut = fit.cross.mut %>%
+  group_by(strain) %>%
+  arrange(strain) %>%
+  drop_na(cross.tolerance) 
+
+write_csv(fit.cross.mut, "snps/fit.cross.mut.csv")
+
+```
+# make SNP heatmap 
+
+```{r}
+fit.cross.mut.gen = read_csv("snps/fit.cross.mut.gen.csv") 
+fit.cross.mut.gen$gene <- factor(fit.cross.mut.gen$gene, levels=c("no genome","no mutation","petite","CUP","chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr10","chr13","chr14","ABP1","ACC1","BNI4","CDC25","COX1","FCY2","GCD2","HBT1","HUL5","ISU1","KRE5","KTR3","LOS1","NFT1","OCA4","PHO81","PHO84","PMA1","PTK2","RCE1","RKM3","RRP46","RRP6","SAK1","SET2","SMC2","SNT2","SSK2","STE5","TFG1","YEF1","YHC1","YHC3","YPK1"))
+
+fit.cross.mut.gen %>% 
+  ggplot(aes(strain, gene, fill= cross.tolerance)) + 
+  geom_tile()+
+  scale_fill_viridis(discrete=FALSE) +
+  labs(fill = "Cross\nTolerance")+
+  labs(x="Evolved Line", y="")+
+  theme_bw() +
+  theme(axis.text.x  = element_text(angle=90, size=7, vjust = 0.5, hjust=0.5))+
+  theme(axis.text.y  = element_text(size=8, vjust = 0.5, hjust=0.5))
+
+ggsave("figures/mutation_heatmap.jpeg", width=14, height=8, units = "in", dpi=700)
+
+
+```
+

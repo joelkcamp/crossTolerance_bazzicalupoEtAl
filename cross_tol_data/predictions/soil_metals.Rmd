@@ -1,0 +1,253 @@
+
+---
+  title: "US geological survey metals"
+author: "AB"
+date: "Sep 2021"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+  
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(viridis)
+library(cowplot)
+library(tidyverse)
+library(wesanderson)
+names(wes_palettes)
+library(vegan)
+library(ggrepel)
+library(dplyr)
+
+library(tidyr)
+
+x = getwd()
+setwd(x)
+```
+
+```{r import all the data, echo = FALSE}
+geochem = read_csv("geochem.csv") # where the BIG file lives for now
+# only select ones that have the word mine in the the contamination column
+# https://mrdata.usgs.gov/geochem/ accessed September 1, 2021
+```
+
+```{r subset data, echo = FALSE}
+seven_all = geochem %>% 
+  select(CD_ICP40, CO_ICP40, CU_ICP40, MN_ICP40, NI_ICP40, ZN_ICP40)
+seven_all[seven_all < 0] = NA
+#seven_all[seven_all = 0] = NA
+na.omit(seven_all)
+#seven_all %>% drop_na()
+seven_all[rowSums(seven_all[])>0,]
+#seven_all[seven_all == "NA"] = 0
+
+
+mine = geochem[grep("mine", geochem$CONTAMSOU),]
+#write_csv(mine, "~/Downloads/geochem/USGS_mines.csv") # 1567 records have mine in the "contamination source" column
+#write_csv(mine, "~/Dropbox/ottoLabNotes/geochem_soil/USGS_mines.csv") # 1567 records have mine in the "contamination source" column
+
+seven_mine = mine %>% 
+  select(CD_ICP40, CO_ICP40, CU_ICP40, MN_ICP40, NI_ICP40, ZN_ICP40)
+seven_mine[seven_mine < 0] = 0 # change negative values to zeros because e.g. Cd (ppm); Cd (ppm) by Inductively Coupled Plasma 
+#seven_mine %>% drop_na()
+na.omit(seven_mine)
+seven_mine[rowSums(seven_mine[])>0,]
+#seven_mine[seven_mine == NA] = 0
+#Spectrometry after acid dissolution Negative values indicate a measurement below detection limit. Origin: USGS. Further documentation is at http://mrdata.usgs.gov/geochem/doc/analysis.htm (https://mrdata.usgs.gov/geochem/describe.php?fieldname=cd_icp40)
+#write_csv(seven_mine, "~/Dropbox/ottoLabNotes/geochem_soil/metalsUSGS_mines.csv") # 1567 records have mine in the "contamination source" column
+
+sedi = geochem[grep("sediment",geochem$DESCRIPT),] # 1166 records have "sediment" in the "DESCRIPT" column
+seven_sedi = sedi %>% 
+  select(CD_ICP40, CO_ICP40, CU_ICP40, MN_ICP40, NI_ICP40, ZN_ICP40)
+seven_sedi[seven_sedi < 0] = 0 # change negative values to zeros because e.g. Cd (ppm); Cd (ppm) by Inductively Coupled Plasma 
+#seven_sedi %>% drop_na()
+na.omit(seven_sedi)
+seven_sedi[rowSums(seven_sedi[])>0,]
+
+
+```
+
+Log transform data
+
+and
+
+Visualize data to assess normality
+
+```{r make violin plots of the metals in soils}
+library(reshape)
+library(reshape2)
+library(dplyr)
+library(ggridges)
+library(cowplot)
+
+#seven_mine = as.data.frame(read_csv("metalsUSGS_mines.csv"))
+#seven_all = as.data.frame(read_csv("metalsUSGS_all.csv")) # 1567 records have mine in the "contamination 
+#heatmap_metals = as.data.frame(read_csv('soilmet_combos.csv')) #save dataframe
+#+0.0001
+
+seven_all_transform = as.data.frame(log(seven_all+0.0001))
+gtmelt_hand = melt(seven_all_transform)
+coreEMine <- ggplot(gtmelt_hand, aes(factor(variable), value))
+test_hand = coreEMine + 
+  geom_violin() + 
+  #geom_jitter(height = 0, width = 0.1) +
+  #ylim(0,3) +
+  stat_summary(fun.data=mean_sdl, mult=1, geom="pointrange",width=0.1, col="grey") + 
+  theme_bw() +
+  labs(
+    x = "Metal from mines (Inductively coupled plasma mass spectrometry)",
+    y = "Log of metal concentration (ppm)"
+  ) 
+test_hand
+
+seven_mine_transform = as.data.frame(log(seven_mine+0.0001))
+gtmelt_hand_mine = melt(seven_mine_transform)
+coreEMine_mine <- ggplot(gtmelt_hand_mine, aes(factor(variable), value))
+test_hand_mine = coreEMine_mine + 
+  geom_violin() + 
+  #geom_jitter(height = 0, width = 0.1) +
+  #ylim(0,3) +
+  stat_summary(fun.data=mean_sdl, mult=1, geom="pointrange",width=0.1, col="grey") + 
+  theme_bw() +
+  labs(
+    x = "Metal from mines (Inductively coupled plasma mass spectrometry)",
+    y = "Log of metal concentration (ppm)"
+  ) 
+test_hand_mine
+
+seven_sedi_transform = as.data.frame(log(seven_sedi+0.0001))
+gtmelt_hand_sedi = melt(seven_sedi_transform)
+coreEMine_sedi <- ggplot(gtmelt_hand_sedi, aes(factor(variable), value))
+test_hand_sedi = coreEMine_sedi + 
+  geom_violin() + 
+  #geom_jitter(height = 0, width = 0.1) +
+  #ylim(0,3) +
+  stat_summary(fun.data=mean_sdl, mult=1, geom="pointrange",width=0.1, col="grey") + 
+  theme_bw() +
+  labs(
+    x = "Metal from mines (Inductively coupled plasma mass spectrometry)",
+    y = "Log of metal concentration (ppm)"
+  ) 
+test_hand_sedi
+
+
+```
+
+Calculate slopes for all metal combinations
+
+and
+
+look at scatter plots
+
+```{r calculate slopes and correlation coefficient for all metal combos in soil and mines }
+library(gtools)
+# seven_mine = read_csv("metalsUSGS_mines.csv")
+# seven_all = read_csv("metalsUSGS_all.csv") # 1567 records have mine in the "contamination 
+
+x<-c("Cd","Co","Cu","Mn","Ni","Zn")
+heatmap_metals_trans <- data.frame(combinations(n=6,r=2,v=x,repeats.allowed=FALSE)) 
+colnames(heatmap_metals_trans)[1]  <- "reference"
+colnames(heatmap_metals_trans)[2]  <- "combo"
+
+heatmap_metals_trans['mine_slope'] <- NA
+heatmap_metals_trans['mine_p.value'] <- NA
+heatmap_metals_trans['mine_adj.r.squared'] <- NA
+heatmap_metals_trans['mine_intercept'] <- NA
+heatmap_metals_trans['all_slope'] <- NA
+heatmap_metals_trans['all_p.value'] <- NA
+heatmap_metals_trans['all_adj.r.squared'] <- NA
+heatmap_metals_trans['all_intercept'] <- NA
+heatmap_metals_trans['sedi_slope'] <- NA
+heatmap_metals_trans['sedi_p.value'] <- NA
+heatmap_metals_trans['sedi_adj.r.squared'] <- NA
+heatmap_metals_trans['sedi_intercept'] <- NA
+
+count = c(2, 3, 4, 5, 6, 3,4,5,6,4,5,6,5,6,6)
+count2 = c(1,1,1,1,1,2,2,2,2,3,3,3,4,4,5)
+n = 1
+pdf("~/Dropbox/ottoLabNotes/figures/soils_corr_test.pdf", onefile = TRUE)
+par(mfrow = c(4,3))
+par(mar = c(0.2,0.2,0.2,0.2))
+par(cex=0.5, mai=c(0.5,0.5,0.2,0.2))
+
+for(r in 1:nrow(heatmap_metals_trans)){
+  x = count[[n]]
+  y = count2[[n]]
+  
+  r_all = cor(seven_all_transform[[y]], seven_all_transform[[x]], use = "complete.obs")
+  plot(seven_all_transform[[y]], seven_all_transform[[x]],xlab=heatmap_metals_trans$reference[r], ylab=heatmap_metals_trans$combo[r], main = "all soils")
+ # mtext(paste0(heatmap_metals_trans$reference[r]), side = 1, cex = 1)
+  fit_all = lm(seven_all_transform[[y]] ~ seven_all_transform[[x]], data=seven_all_transform)
+  heatmap_metals_trans$all_slope[r] = r_all #correlation coefficient
+  heatmap_metals_trans$all_p.value[r] = summary(fit_all)$coef[2,4] #p-value
+  heatmap_metals_trans$all_adj.r.squared[r] = summary(fit_all)$adj.r.squared # Adjusted R2
+  heatmap_metals_trans$all_intercept[r] = fit_all$coef[[1]] # intercept
+  
+  r_mine = cor(seven_mine_transform[[y]], seven_mine_transform[[x]], use = "complete.obs")
+  plot(seven_mine_transform[[y]], seven_mine_transform[[x]],xlab=heatmap_metals_trans$reference[r], ylab=heatmap_metals_trans$combo[r], main = "mining soils")
+#  mtext(paste0(heatmap_metals_trans$reference[r]), side = 1, cex = 1)
+  fit_mine = lm(seven_mine_transform[[y]] ~ seven_mine_transform[[x]], data=seven_mine_transform)
+  heatmap_metals_trans$mine_slope[r] = r_mine #slope
+  heatmap_metals_trans$mine_p.value[r] = summary(fit_mine)$coef[2,4] #p-value
+  heatmap_metals_trans$mine_adj.r.squared[r] = summary(fit_mine)$adj.r.squared # Adjusted R2
+  heatmap_metals_trans$mine_intercept[r] = fit_mine$coef[[1]] # intercept
+
+  r_sedi = cor(seven_sedi_transform[[y]], seven_sedi_transform[[x]], use = "complete.obs")
+  plot(seven_sedi_transform[[y]], seven_sedi_transform[[x]],xlab=heatmap_metals_trans$reference[r], ylab=heatmap_metals_trans$combo[r], main = "sediment")
+ # mtext(paste0(heatmap_metals_trans$reference[r]), side = 1, cex = 1)
+  fit_sedi = lm(seven_sedi_transform[[y]] ~ seven_sedi_transform[[x]], data=seven_sedi_transform)
+  heatmap_metals_trans$sedi_slope[r] = r_sedi #slope
+  heatmap_metals_trans$sedi_p.value[r] = summary(fit_sedi)$coef[2,4] #p-value
+  heatmap_metals_trans$sedi_adj.r.squared[r] = summary(fit_sedi)$adj.r.squared # Adjusted R2
+  heatmap_metals_trans$sedi_intercept[r] = fit_sedi$coef[[1]] # intercept
+  
+  n = n+1
+}
+
+dev.off()
+# 
+write.csv(heatmap_metals_trans, file = 'soilmet_trans_combos.csv') #save dataframe
+
+```
+
+
+Visualize in heatmap of the output of cor() used in previous code block and report that value in the heatmap
+  
+```{r }
+
+
+# template from heatmap code for SGD 
+heatmap_metals_trans %>% 
+  ggplot(aes(x=reference,y=combo,color=mine_slope)) + 
+    geom_point(shape=15, size=15) +
+    scale_color_gradient(low = "yellow", high = "blue",
+    name="Metal correlation in mining soil") +
+    scale_x_discrete(position = "top") + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) 
+#ggsave("~/Dropbox/ottoLabNotes/aneuploidy/mineCorrHeatmap.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+heatmap_metals_trans %>% 
+  ggplot(aes(x=reference,y=combo,color=all_slope)) + 
+    geom_point(shape=15, size=15) +
+    scale_color_gradient(low = "yellow", high = "blue",
+    name="Metal correlation in soil") +
+    scale_x_discrete(position = "top") + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) 
+#ggsave("~/Dropbox/ottoLabNotes/aneuploidy/soilCorrHeatmap.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+heatmap_metals_trans %>% 
+  ggplot(aes(x=reference,y=combo,color=sedi_slope)) + 
+    geom_point(shape=15, size=15) +
+    scale_color_gradient(low = "yellow", high = "blue",
+    name="Metal correlation in sediment") +
+    scale_x_discrete(position = "top") + 
+    theme_bw() +
+    theme(axis.title.x=element_blank(), axis.title.y=element_blank()) 
+#ggsave("~/Dropbox/ottoLabNotes/aneuploidy/sedimentCorrHeatmap.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+```
+

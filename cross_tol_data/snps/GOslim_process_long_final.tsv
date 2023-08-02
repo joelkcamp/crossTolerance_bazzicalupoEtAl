@@ -1,0 +1,147 @@
+TERM	GENE
+response to chemical	GPB1
+response to chemical	HUL5
+response to chemical	PDR1
+response to chemical	SHP1
+response to chemical	SNT2
+response to chemical	SSK2
+response to chemical	STE5
+response to chemical	YPK1
+response to chemical	ion transport	BSD2
+response to chemical	FZF1
+response to chemical	PHO84
+response to chemical	PMA1
+response to chemical	PTK2
+response to chemical	VCX1
+transmembrane transport	FCY2
+transmembrane transport	PHO84
+transmembrane transport	PMA1
+transmembrane transport	VCX1
+transmembrane transport	rRNA processing	NSR1
+transmembrane transport	RRP46
+transmembrane transport	RRP6
+transmembrane transport	UTP8
+regulation of organelle organization	ABP1
+regulation of organelle organization	RRP6
+regulation of organelle organization	SET2
+regulation of organelle organization	SSK2
+regulation of organelle organization	proteolysis involved in protein catabolic process	BSD2
+regulation of organelle organization	GPB1
+regulation of organelle organization	HUL5
+regulation of organelle organization	SHP1
+transcription by RNA polymerase II	FZF1
+transcription by RNA polymerase II	PDR1
+transcription by RNA polymerase II	SNT2
+transcription by RNA polymerase II	TFG1
+cellular ion homeostasis	ISU1
+cellular ion homeostasis	PTK2
+cellular ion homeostasis	VCX1
+regulation of protein modification process	SET2
+regulation of protein modification process	STE5
+regulation of protein modification process	TFG1
+mitotic cell cycle	CDC25
+mitotic cell cycle	PTK2
+mitotic cell cycle	SMC2
+protein modification by small protein conjugation or removal	GPB1
+protein modification by small protein conjugation or removal	HUL5
+protein modification by small protein conjugation or removal	SNT2
+nucleobase-containing compound transport	FCY2
+nucleobase-containing compound transport	LOS1
+nucleobase-containing compound transport	UTP8
+meiotic cell cycle	SMC2
+regulation of DNA metabolic process	RRP6
+regulation of DNA metabolic process	SAK1
+regulation of DNA metabolic process	SET2
+carbohydrate metabolic process	KRE5
+carbohydrate metabolic process	SAK1
+carbohydrate metabolic process	SHP1
+regulation of cell cycle	CDC25
+regulation of cell cycle	SET2
+regulation of cell cycle	SMC2
+lipid metabolic process	ACC1
+lipid metabolic process	ROG1
+lipid metabolic process	YPK1
+regulation of translation	GCD2
+regulation of translation	RRP46
+regulation of translation	RRP6
+invasive growth in response to glucose limitation	FIG2
+invasive growth in response to glucose limitation	GPB1
+invasive growth in response to glucose limitation	STE5
+cell morphogenesis	FIG2
+cell morphogenesis	HBT1
+regulation of transport	FZF1
+regulation of transport	YPK1
+organelle fission	SET2
+organelle fission	SMC2
+cytoskeleton organization	ABP1
+cytoskeleton organization	SSK2
+histone modification	SET2
+histone modification	SNT2
+chromatin organization	SET2
+chromatin organization	SMC2
+organelle assembly	PMA1
+organelle assembly	SHP1
+protein phosphorylation	PTK2
+protein phosphorylation	STE5
+peptidyl-amino acid modification	RKM3
+peptidyl-amino acid modification	SET2
+pseudohyphal growth	GPB1
+pseudohyphal growth	SAK1
+generation of precursor metabolites and energy	SAK1
+generation of precursor metabolites and energy	SHP1
+protein targeting	BSD2
+protein targeting	COG1
+cell wall organization or biogenesis	KRE5
+cell wall organization or biogenesis	YPK1
+sporulation	SET2
+sporulation	SHP1
+DNA replication	SAK1
+DNA replication	SET2
+sno(s)RNA processing	RRP46
+sno(s)RNA processing	RRP6
+protein alkylation	RKM3
+protein alkylation	SET2
+DNA-templated transcription elongation	SET2
+DNA-templated transcription elongation	TFG1
+DNA recombination	NSR1
+DNA recombination	SET2
+RNA modification	DUS4
+RNA modification	ISU1
+tRNA processing	DUS4
+tRNA processing	ISU1
+RNA catabolic process	RRP46
+RNA catabolic process	RRP6
+chromosome segregation	SHP1
+chromosome segregation	SMC2
+vacuole organization	SHP1
+vacuole organization	VTC1
+ribosomal small subunit biogenesis	NSR1
+ribosomal small subunit biogenesis	UTP8
+telomere organization	RRP6
+protein maturation	RCE1
+mRNA processing	YHC1
+protein glycosylation	KTR3
+response to oxidative stress	SNT2
+nucleus organization	SMC2
+monocarboxylic acid metabolic process	ACC1
+protein dephosphorylation	TFG1
+transcription by RNA polymerase I	UTP8
+DNA-templated transcription termination	SET2
+organelle fusion	VTC1
+cytokinesis	BNI4
+DNA repair	SET2
+RNA splicing	YHC1
+transposition	STE5
+nucleobase-containing small molecule metabolic process	YEF1
+ribosome assembly	NSR1
+translational initiation	GCD2
+lipid transport	YPK1
+Golgi vesicle transport	COG1
+protein acylation	SET2
+DNA-templated transcription initiation	TFG1
+response to osmotic stress	SSK2
+cellular respiration	COX1
+phosphate metabolism	PHO81
+signal transduction	SYG1
+macroautophagy	NFT1
+unknown	OCA4

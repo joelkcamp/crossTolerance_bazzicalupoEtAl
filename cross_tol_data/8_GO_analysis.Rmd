@@ -1,0 +1,255 @@
+---
+title: "Untitled"
+output: html_document
+date: '2023-05-12'
+---
+
+```{r}
+library(tidyverse)
+library(forcats)
+x = getwd()
+setwd(x)
+```
+
+```{r}
+mutations <- read.csv("snps/mutations_haploid.csv") 
+mutations <- mutations %>% 
+  select(-X) %>% 
+  rename("E1"="metal") %>% 
+  arrange(evo_line) 
+mutations$evo_line <- gsub("_.*", "", mutations$evo_line)
+
+fitness <- read.csv("snps/pval_data.csv")
+
+fitness_wider <- fitness %>% 
+  filter(name=="log") %>% 
+  select(-c(X,name, E1,pvals,pvals_corrected)) %>% 
+  pivot_wider(names_from = E2, values_from = pvals_corrected_overall) %>% 
+  rename("evo_line" = "strain") %>% 
+  arrange(evo_line) 
+fitness_wider$evo_line <- gsub("cdbm", "CdBM", fitness_wider$evo_line)
+fitness_wider$evo_line <- gsub("cobm", "CoBM", fitness_wider$evo_line)
+fitness_wider$evo_line <- gsub("cubm", "CuBM", fitness_wider$evo_line)
+fitness_wider$evo_line <- gsub("mnbm", "MnBM", fitness_wider$evo_line)
+fitness_wider$evo_line <- gsub("nibm", "NiBM", fitness_wider$evo_line)
+fitness_wider$evo_line <- gsub("znbm", "ZnBM", fitness_wider$evo_line)
+fitness_wider$evo_line <- gsub("_", "", fitness_wider$evo_line)
+
+mut_fitness <- left_join(mutations, fitness_wider, by = "evo_line")
+mut_pleio <- mut_fitness %>% 
+  filter(evo_line != "MnBM42") %>% 
+  relocate(INFO, .after=Zn) %>% 
+  relocate(QUAL, .after=ALT) %>% 
+  select(-c(.YPAD)) %>% 
+  arrange(Cd,Co,Cu,Mn,Ni,Zn) #%>% 
+  #write.csv("mutations_pleiotropy_pvalues_Mn42removed.csv")
+mut_pleio$GENE_abbrev <- str_extract(mut_pleio$GENE, "^.*(?= - )")
+mut_pleio <- mut_pleio %>% 
+  relocate(GENE_abbrev, .before=GENE)
+```
+
+#GO slim - broader categories, easier to explain methods
+##9terms did not map with GOslim, so these are added manually to the tsv (GOslim_component_final.tsv)
+```{r}
+
+component_slim <- read_tsv("snps/GOslim_component_final.tsv") %>% 
+  mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
+  mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
+  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) %>% 
+  pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
+component_slim$TERM <- factor(component_slim$TERM, levels=c("exosome","Golgi transport complex", "chromosome","cell wall", "cytoskeleton","cell cortex","cellular bud","nucleolus","site of polarized growth","endoplasmic reticulum","vacuole","mitochondrion","plasma membrane","membrane","cytoplasm","nucleus","unknown"))
+```
+```{r}
+component_slim %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Cellular Component", y="Proportion") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
+ggsave("figures/GOslim_enriched_mut.png", width=7,height=4,units="in",dpi=700)
+```
+```{r}
+component_long <- read_tsv("snps/GOslim_component_long_final.tsv")
+component_long <-component_long %>%
+  rename(GENE_abbrev=GENE)
+evol_mut_component <- left_join(mut_pleio, component_long) %>%
+  arrange(COMPONENT, E1) %>% 
+  drop_na()
+```
+```{r}
+evol_mut_component_summary <- evol_mut_component %>% 
+  group_by(E1, COMPONENT) %>% 
+  summarise(total=n())
+
+evol_mut_component_summary$COMPONENT <- as.factor(evol_mut_component_summary$COMPONENT )
+
+evol_mut_component_summary$COMPONENT <- factor(evol_mut_component_summary$COMPONENT, levels=c("exosome","Golgi transport complex", "chromosome","cell wall", "cytoskeleton","cell cortex","cellular bud","nucleolus","site of polarized growth","endoplasmic reticulum","vacuole","mitochondrion","plasma membrane","membrane","cytoplasm","nucleus","unknown"))
+
+evol_mut_component_summary %>%
+  ggplot(aes(x=COMPONENT, y=total, fill=E1)) + 
+  geom_bar(stat="identity") + 
+  labs(x="Cellular Component", y = "Number of significant Genes") +
+  scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("figures/component_for_enrich_final.png", width=7,height=5,units="in",dpi=700)
+```
+
+
+#GOslim process
+##7 terms did not map with GOslim, so these are added manually to the tsv (GOslim_process_final.tsv)
+```{r}
+process_slim0 <- read_tsv("snps/GOslim_process_final.tsv") 
+process_slim0$TERM <- as.factor(process_slim0$TERM)
+
+process_slim00 <- process_slim0 %>% 
+  mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
+  mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
+  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES)
+
+process_slim00 <- process_slim00 %>% 
+  arrange(evol_mutations)
+process_levels <- process_slim00$TERM
+
+process_slim <- process_slim00 %>%
+  pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
+
+process_slim$TERM <- gsub("metabolic process", "metabolism", process_slim$TERM)
+process_slim$TERM <- gsub("modification process", "modification", process_slim$TERM)
+
+process_slim$TERM <- factor(process_slim$TERM, levels=c("carbohydrate metabolism", "regulation of DNA metabolism", "regulation of translation", "regulation of cell cycle", "lipid metabolism", "mitotic cell cycle", "regulation of protein modification", "cellular ion homeostasis", "transcription by RNA polymerase II", "proteolysis", "regulation of organelle organization", "rRNA processing", "transmembrane transport", "ion transport", "response to chemical", "unknown"))
+```
+
+
+# Fisher's exact tests with wouter help
+```{r}
+
+component_fisher <- read_tsv("snps/GOslim_component_final.tsv")
+process_fisher <- read_tsv("snps/GOslim_process_final.tsv")
+
+my_fisher_exact <- function(i1, i2, i3, i4) {
+  fisher.test(matrix(c(i1, i2, i3, i4), nrow = 2))
+}
+component_fisher <- component_fisher %>% 
+  rowwise() %>% 
+  mutate(
+    fisher = list(my_fisher_exact(NUM_LIST_ANNOTATIONS, LIST_SIZE, TOTAL_NUM_ANNOTATIONS, POPULATION_SIZE)),
+    pval = fisher$p.value
+  ) %>%
+  mutate(FDR = p.adjust(pval, method = "BH" ))
+
+component_fisher$pval
+
+process_fisher <- process_fisher %>% 
+  rowwise() %>% 
+  mutate(
+    fisher = list(my_fisher_exact(NUM_LIST_ANNOTATIONS, LIST_SIZE, TOTAL_NUM_ANNOTATIONS, POPULATION_SIZE)),
+    pval = fisher$p.value
+  )
+process_fisher$pval
+
+component_pval=subset(component_fisher, select = -c(fisher) )
+process_pval=subset(process_fisher, select = -c(fisher) )
+
+write_csv(component_pval,"snps/GOslim_component_fisher_pval.csv" )
+write_csv(process_pval,"snps/GOslim_process_fisher_pval.csv" )
+
+
+```
+
+
+# top 15 
+```{r}
+#process_pval=read_csv("snps/GOslim_process_fisher_pval.csv")
+process_pval_15 = process_pval %>% # Top 15 highest p-values by TERM
+  slice_min(pval, n = 15)
+
+process_pval_15_0 <- process_pval_15 %>% 
+  mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
+  mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
+  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) 
+
+process_pval_15_0 <- process_pval_15_0 %>% 
+  arrange(evol_mutations)
+process_levels <- process_pval_15_0$TERM
+
+process_slim_15 <- process_pval_15_0 %>%
+  pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
+
+process_slim_15$TERM <- factor(process_slim_15$TERM, levels=process_levels)
+
+process_slim_15$TERM <- factor(process_slim_15$TERM)
+```
+
+```{r}
+process_slim %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Biological Process", y="Proportion") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
+ggsave("figures/GOslim_enriched_mut.png", width=7,height=4,units="in",dpi=700)
+
+process_slim_15 %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Biological Process", y="Proportion") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8),plot.margin = margin(0.2,0.2,0.2,0.8, "cm"))
+ggsave("figures/GOslim_enriched_mut_15.png", width=7.1,height=4,units="in",dpi=700)
+```
+
+```{r}
+#process_long <- read_tsv("snps/GOslim_process_ext_long.tsv") %>% 
+process_long <- read_tsv("snps/GOslim_process_final.tsv") %>% 
+  rename("GENE_abbrev"="ANNOTATED_GENES")
+process_long$GENE_abbrev <- gsub("YKL126W", "YPK1", process_long$GENE_abbrev)
+process_long$GENE_abbrev <- gsub("YKR103W", "NFT1", process_long$GENE_abbrev)
+
+evol_mut_process <- left_join(mut_pleio, process_long) %>% 
+  rename("PROCESS"="TERM") %>% 
+  arrange(PROCESS, E1)
+```
+```{r}
+evol_mut_process_summary <- evol_mut_process %>% 
+  group_by(E1, PROCESS) %>% 
+  summarise(total=n())
+
+evol_mut_process_summary$PROCESS <- as.factor(evol_mut_process_summary$PROCESS)
+
+#evol_mut_process_summary$PROCESS <- factor(evol_mut_process_summary$PROCESS, levels=c("phosphate metabolism", "aldehyde metabolism", "sno(s)RNA processing", "cell morphogenesis", "protein alkylation", "cellular ion homeostasis", "regulation of DNA metabolism", "invasive growth in response to glucose limitation", "nucleobase-containing compound transport", "regulation of protein modification process", "proteolysis involved in protein catabolism", "cell wall organization or biogenesis", "transmembrane transport", "ion transport", "response to chemical", "unknown"))
+
+evol_mut_process_summary %>%
+  drop_na() %>% 
+  ggplot(aes(x=PROCESS, y=total, fill=E1)) + 
+  geom_bar(stat="identity") + 
+  labs(x="Cellular Component", y = "Number of significant Genes") +
+  scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle=45, hjust=1), plot.margin = margin(0.2,0.2,0.2,0.8, "cm"))
+ggsave("figures/process_for_enrich.png", width=7,height=5,units="in",dpi=700)
+```
+
+#GOslim function
+```{r}
+function_slim <- read_tsv("snps/GOslim_function_final.tsv") %>% 
+  mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
+  mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
+  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) %>% 
+  arrange(evol_mutations, whole_genome) %>% 
+  pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
+function_slim$TERM <- factor(function_slim$TERM, levels=c("translation factor activity, RNA binding", "ATP hydrolysis activity", "hydrolase activity", "ligase activity", "chromatin binding", "rRNA binding", "lipid binding", "peptidase activity", "nuclease activity", "guanyl-nucleotide exchange factor activity", "cytoskeletal protein binding", "methyltransferase activity", "enzyme binding", "glycosyltransferase activity", "protein binding", "DNA-binding transcription factor activity", "transferase activity", "oxidoreductase activity", "protein-macromolecule adaptor activity", "ion binding", "mRNA binding", "DNA binding", "kinase activity", "enzyme regulator activity", "RNA binding", "transmembrane transporter activity"))
+```
+```{r}
+function_slim %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Molecular Function", y="Proportion") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
+ggsave("figures/GOslim_enriched_function_all.png", width=7,height=4,units="in",dpi=700)
+```

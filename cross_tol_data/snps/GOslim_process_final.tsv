@@ -1,0 +1,73 @@
+GOID	TERM	NUM_LIST_ANNOTATIONS	LIST_SIZE	CLUSTER_FREQUENCY	TOTAL_NUM_ANNOTATIONS	POPULATION_SIZE	GENOME_FREQUENCY	ANNOTATED_GENES
+GO:0042221	response to chemical	8	47	17.02%	454	6485	7.00%	GPB1, HUL5, PDR1, SHP1, SNT2, SSK2, STE5, YKL126W
+GO:0006811	ion transport	6	47	12.77%	215	6485	3.32%	BSD2, FZF1, PHO84, PMA1, PTK2, VCX1
+GO:0055085	transmembrane transport	4	47	8.51%	271	6485	4.18%	FCY2, PHO84, PMA1, VCX1
+GO:0006364	rRNA processing	4	47	8.51%	328	6485	5.06%	NSR1, RRP46, RRP6, UTP8
+GO:0033043	regulation of organelle organization	4	47	8.51%	237	6485	3.65%	ABP1, RRP6, SET2, SSK2
+GO:0051603	proteolysis involved in protein catabolic process	4	47	8.51%	224	6485	3.45%	BSD2, GPB1, HUL5, SHP1
+GO:0006366	transcription by RNA polymerase II	4	47	8.51%	486	6485	7.49%	FZF1, PDR1, SNT2, TFG1
+GO:0006873	cellular ion homeostasis	3	47	6.38%	131	6485	2.02%	ISU1, PTK2, VCX1
+GO:0031399	regulation of protein modification process	3	47	6.38%	118	6485	1.82%	SET2, STE5, TFG1
+GO:0000278	mitotic cell cycle	3	47	6.38%	333	6485	5.13%	CDC25, PTK2, SMC2
+GO:0070647	protein modification by small protein conjugation or removal	3	47	6.38%	164	6485	2.53%	GPB1, HUL5, SNT2
+GO:0015931	nucleobase-containing compound transport	3	47	6.38%	139	6485	2.14%	FCY2, LOS1, UTP8
+GO:0051321	meiotic cell cycle	3	47	6.38%	291	6485	4.49%	SET2, SHP1, SMC2
+GO:0051052	regulation of DNA metabolic process	3	47	6.38%	119	6485	1.84%	RRP6, SAK1, SET2
+GO:0005975	carbohydrate metabolic process	3	47	6.38%	148	6485	2.28%	KRE5, SAK1, SHP1
+GO:0051726	regulation of cell cycle	3	47	6.38%	255	6485	3.93%	CDC25, SET2, SMC2
+GO:0006629	lipid metabolic process	3	47	6.38%	297	6485	4.58%	ACC1, ROG1, YKL126W
+GO:0006417	regulation of translation	3	47	6.38%	206	6485	3.18%	GCD2, RRP46, RRP6
+GO:0001403	invasive growth in response to glucose limitation	3	47	6.38%	54	6485	0.83%	FIG2, GPB1, STE5
+GO:0000902	cell morphogenesis	2	47	4.26%	27	6485	0.42%	FIG2, HBT1
+GO:0051049	regulation of transport	2	47	4.26%	96	6485	1.48%	FZF1, YKL126W
+GO:0048285	organelle fission	2	47	4.26%	243	6485	3.75%	SET2, SMC2
+GO:0007010	cytoskeleton organization	2	47	4.26%	254	6485	3.92%	ABP1, SSK2
+GO:0016570	histone modification	2	47	4.26%	110	6485	1.70%	SET2, SNT2
+GO:0006325	chromatin organization	2	47	4.26%	251	6485	3.87%	SET2, SMC2
+GO:0070925	organelle assembly	2	47	4.26%	112	6485	1.73%	PMA1, SHP1
+GO:0006468	protein phosphorylation	2	47	4.26%	126	6485	1.94%	PTK2, STE5
+GO:0018193	peptidyl-amino acid modification	2	47	4.26%	148	6485	2.28%	RKM3, SET2
+GO:0007124	pseudohyphal growth	2	47	4.26%	76	6485	1.17%	GPB1, SAK1
+GO:0006091	generation of precursor metabolites and energy	2	47	4.26%	80	6485	1.23%	SAK1, SHP1
+GO:0006605	protein targeting	2	47	4.26%	242	6485	3.73%	BSD2, COG1
+GO:0071554	cell wall organization or biogenesis	2	47	4.26%	197	6485	3.04%	KRE5, YKL126W
+GO:0043934	sporulation	2	47	4.26%	131	6485	2.02%	SET2, SHP1
+GO:0006260	DNA replication	2	47	4.26%	139	6485	2.14%	SAK1, SET2
+GO:0043144	sno(s)RNA processing	2	47	4.26%	45	6485	0.69%	RRP46, RRP6
+GO:0008213	protein alkylation	2	47	4.26%	52	6485	0.80%	RKM3, SET2
+GO:0006354	DNA-templated transcription, elongation	2	47	4.26%	105	6485	1.62%	SET2, TFG1
+GO:0006310	DNA recombination	2	47	4.26%	190	6485	2.93%	NSR1, SET2
+GO:0009451	RNA modification	2	47	4.26%	177	6485	2.73%	DUS4, ISU1
+GO:0008033	tRNA processing	2	47	4.26%	118	6485	1.82%	DUS4, ISU1
+GO:0006401	RNA catabolic process	2	47	4.26%	152	6485	2.34%	RRP46, RRP6
+GO:0007059	chromosome segregation	2	47	4.26%	194	6485	2.99%	SHP1, SMC2
+GO:0007033	vacuole organization	2	47	4.26%	101	6485	1.56%	SHP1, VTC1
+GO:0042274	ribosomal small subunit biogenesis	2	47	4.26%	137	6485	2.11%	NSR1, UTP8
+GO:0032200	telomere organization	1	47	2.13%	134	6485	2.07%	RRP6
+GO:0051604	protein maturation	1	47	2.13%	86	6485	1.33%	RCE1
+GO:0006397	mRNA processing	1	47	2.13%	180	6485	2.78%	YHC1
+GO:0006486	protein glycosylation	1	47	2.13%	64	6485	0.99%	KTR3
+GO:0006979	response to oxidative stress	1	47	2.13%	106	6485	1.63%	SNT2
+GO:0006997	nucleus organization	1	47	2.13%	97	6485	1.50%	SMC2
+GO:0032787	monocarboxylic acid metabolic process	1	47	2.13%	127	6485	1.96%	ACC1
+GO:0006470	protein dephosphorylation	1	47	2.13%	28	6485	0.43%	TFG1
+GO:0006360	transcription by RNA polymerase I	1	47	2.13%	70	6485	1.08%	UTP8
+GO:0006353	DNA-templated transcription, termination	1	47	2.13%	41	6485	0.63%	SET2
+GO:0048284	organelle fusion	1	47	2.13%	99	6485	1.53%	VTC1
+GO:0000910	cytokinesis	1	47	2.13%	96	6485	1.48%	BNI4
+GO:0006281	DNA repair	1	47	2.13%	265	6485	4.09%	SET2
+GO:0008380	RNA splicing	1	47	2.13%	140	6485	2.16%	YHC1
+GO:0032196	transposition	1	47	2.13%	112	6485	1.73%	STE5
+GO:0055086	nucleobase-containing small molecule metabolic process	1	47	2.13%	163	6485	2.51%	YEF1
+GO:0042255	ribosome assembly	1	47	2.13%	64	6485	0.99%	NSR1
+GO:0006413	translational initiation	1	47	2.13%	61	6485	0.94%	GCD2
+GO:0006869	lipid transport	1	47	2.13%	71	6485	1.09%	YKL126W
+GO:0048193	Golgi vesicle transport	1	47	2.13%	192	6485	2.96%	COG1
+GO:0043543	protein acylation	1	47	2.13%	70	6485	1.08%	SET2
+GO:0006352	DNA-templated transcription, initiation	1	47	2.13%	75	6485	1.16%	TFG1
+GO:0006970	response to osmotic stress	1	47	2.13%	68	6485	1.05%	SSK2
+GO:0045333	cellular respiration	1	47	2.13%	89	6485	1.37%	COX1
+GO:0006796 	phosphate metabolism	1	47	2.13%	5	6485	0.08%	PHO81
+GO:0007165	signal transduction	1	47	2.13%	19	6485	0.29%	SYG1
+GO:0016236	macroautophagy	1	47	2.13%	71	6485	1.09%	NFT1
+NA	unknown	1	47	2.13%	1715	6485	26.45%	OCA4
