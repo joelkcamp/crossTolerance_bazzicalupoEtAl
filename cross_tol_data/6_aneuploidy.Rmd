@@ -36,7 +36,7 @@ legend_title3 = "Evolution\nEnvironment"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-setwd("~/Dropbox/ottoLabNotes/cross_tol_data/depth/10_DepthAnalyses/")
+setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/depth/10_DepthAnalyses/")
 require(stats)
 files <-list.files()
 #Reorder
@@ -102,7 +102,7 @@ locbychromo[[i]] <- split(temp[,2]/10^6, temp$CHR)
 
 # Plots by chromosome (4 experiments per plot)
 ```{r }
-pdf("~/Dropbox/ottoLabNotes/cross_tol_data/figures/coverage_chrom.pdf", onefile = TRUE)
+pdf("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/figures/coverage_chrom.pdf", onefile = TRUE)
 #par(mfrow = c(10,4))
 for (j in seq(0,110,4)) {
 #quartz()
@@ -145,7 +145,7 @@ for (i in seq(1,16) ) {
 }
 }
 colnames(chr_avg) = c("strain","chr","cov")
-write.csv(chr_avg, "~/Dropbox/ottoLabNotes/cross_tol_data/depth/chr_avg.csv")
+write.csv(chr_avg, "~/crossTolerance_bazzicalupoEtAl/cross_tol_data/depth/chr_avg.csv")
 
 ```
 
@@ -154,7 +154,7 @@ Make summary table of whole chromosome duplications
 Formattable does not export as a figure, so we did the dirty thing of taking a screen shot. Bite me.
 ```{r }
 
-i1 <- read.csv("~/Dropbox/ottoLabNotes/cross_tol_data/depth/whole_chrom_dups.csv")
+i1 <- read.csv("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/depth/whole_chrom_dups.csv")
 
 whole_gen_dup = formattable(i1, list(area(col = Cd.37:Cd.45) ~ color_tile("transparent", "#FF9A17"),
                      area(col = Co.2) ~ color_tile("transparent","#3B83FF"),
@@ -171,7 +171,7 @@ whole_gen_dup
 ```
 
 ```{r}
-setwd("~/Dropbox/ottoLabNotes/cross_tol_data")
+setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data")
 mydata3 = read.csv("mbm_intermediate_files/mydata3.csv")
 mydata6 = mydata3 %>% 
   select(strain, E1, E2, maxSlope, anc_slope) %>% 
