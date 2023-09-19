@@ -6,8 +6,6 @@ date: '2023-04-14'
 
 ```{r}
 library(tidyverse)
-library(viridis)
-library(vcfR)
 x = getwd()
 setwd(x)
 name_codes = read_csv("code_strain_line.csv")
@@ -34,7 +32,7 @@ p5
 p6
 
 #removing low quality sites
-#changed QUAL > 1000 to QD > 4, FS < 200, SOR < 5, MQ > 50, MQRaknSum > -5, ReadPosRankSum > -7.5 
+#changed QUAL > 1000 to QD > 4, FS < 50, SOR < 4, MQ > 50, MQRaknSum > -5, ReadPosRankSum > -7.5 
 
 mel_raw00 <- mel_raw0 %>% 
   filter(QD > 4)
@@ -150,7 +148,7 @@ mel_RMancestral <- mel_chr %>%
 
 #This is removing all sites where there are no instances of 0
 
-#mel_subset0 <- mel_RMancestral[apply(mel_RMancestral[, 10:116], 1, function(x) any(grepl("0", x))), ]
+mel_subset0 <- mel_RMancestral[apply(mel_RMancestral[, 11:121], 1, function(x) any(grepl("0", x))), ]
 
 #UPDATE: Not sure if this filtering is necessary
 mel_RMancestral <- mel_RMancestral %>%
@@ -164,13 +162,11 @@ mel_RMancestral$chr <- sub("^", "chr", mel_RMancestral$chr)
 mel_RMancestral[] <- lapply(mel_RMancestral, function(x) gsub("chr17", "chrmt", x))
 
 #This is removing all sites where there are no instances of 1|1
-mel_subset <- mel_RMancestral[apply(mel_RMancestral[, 12:121], 1, function(x) any(grepl("1", x))), ]
-mel_subset_test <- mel_subset[apply(mel_subset[, 12:121], 1, function(x) any(grepl("0", x))), ]
-
-
+mel_subset <- mel_RMancestral[apply(mel_RMancestral[, 10:121], 1, function(x) any(grepl("1", x))), ]
+mel_subset_test <- mel_subset[apply(mel_subset[, 10:121], 1, function(x) any(grepl("0", x))), ]
 
 #This is to get what sites to annotate
-sites_to_check0 <- data.frame(matrix(nrow=406,ncol=1)) # AB changed to 347 from 268
+sites_to_check0 <- data.frame(matrix(nrow=1041,ncol=1)) # AB changed to 347 from 268
 sites_to_check0$key <- paste(mel_subset$chr, mel_subset$POS, sep="_")
 sites_to_check <- sites_to_check0 %>% 
   select(key) %>% 
@@ -185,7 +181,7 @@ no00remove has 79 evo lines
 no00keep has 107 evo lines
 
 ```{r}
-annot <- read.csv("snps/sites_list_subset_ANNOT.csv") %>% 
+annot <- read.csv("snps/sites_list_subset_ANNOTJoel_20230919.csv") %>% 
   rename("chr"="CHR") %>% 
   arrange(chr, POS)
 
@@ -204,7 +200,7 @@ mel_mut <- mel_subset %>%
 
 mel_mut_annot <- left_join(mel_mut, annot, by = c('chr', 'POS')) %>% 
   #replace(is.na(.), 0) %>% 
-  select(-c(FUNCTION:X.7)) %>% 
+  select(-c(FUNCTION:X.2)) %>% 
   filter(GENE!="NAG") %>% 
   relocate(GENE, .after=ALT) %>% 
   # These next two steps remove unknown or putative areas
