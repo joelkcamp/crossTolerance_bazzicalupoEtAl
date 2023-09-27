@@ -11,13 +11,13 @@ library(tidyverse)
 library(cowplot)
 #library(ggblur)
 # set wd
-source("~/Dropbox/ottoLabNotes/cross_tol_data/bioscreen_functions.R")
+source("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/bioscreen_functions.R")
 library(viridis)
-setwd("~/Dropbox/ottoLabNotes/cross_tol_data/raw_outcross_petite/")
+setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/")
 
 # file with metadata of bioscreen wells
-codes <- read.csv("~/Dropbox/ottoLabNotes/cross_tol_data/raw_outcross_petite/bioscreen20230418BIO1_codes.csv") # 
-biosc2 <- read.csv("~/Dropbox/ottoLabNotes/cross_tol_data/raw_outcross_petite/20230418_BIO2.csv")
+codes <- read.csv("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/bioscreen20230418BIO1_codes.csv") # 
+biosc2 <- read.csv("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/20230418_BIO2.csv")
 
 ```
 
@@ -51,7 +51,7 @@ Plot petite outcross growth graphs
 ```{r}
 
 # loop through matrix to get growth curves, maximum slope and final OD per well
-pdf("~/Dropbox/ottoLabNotes/cross_tol_data/figures/outcross_petite_metals.pdf", onefile = TRUE)
+pdf("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/figures/outcross_petite_metals.pdf", onefile = TRUE)
 par(mfrow = c(10,4))
 par(mar = c(0,0,0,0))
 par(cex=0.5, mai=c(0.1,0.2,0.1,0.1))
@@ -116,7 +116,7 @@ out_mydata3 <- out_mydata3 %>%
 Load metal experimental data 
 
 ```{r}
-setwd("~/Dropbox/ottoLabNotes/cross_tol_data")
+setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data")
 name_codes = read_csv("code_strain_line.csv")
 mydata3 = read.csv("mbm_intermediate_files/mydata3.csv")
 mydata6 = mydata3 %>% 
