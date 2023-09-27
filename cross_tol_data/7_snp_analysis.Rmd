@@ -6,6 +6,7 @@ date: '2023-04-14'
 
 ```{r}
 library(tidyverse)
+library(viridis)
 x = getwd()
 setwd(x)
 name_codes = read_csv("code_strain_line.csv")
@@ -151,8 +152,8 @@ mel_RMancestral <- mel_chr %>%
 mel_subset0 <- mel_RMancestral[apply(mel_RMancestral[, 11:121], 1, function(x) any(grepl("0", x))), ]
 
 #UPDATE: Not sure if this filtering is necessary
-mel_RMancestral <- mel_RMancestral %>%
-  filter(rowSums(across(everything(), ~ str_detect(., "low coverage"))) <= 50)
+#mel_RMancestral <- mel_RMancestral %>%
+#  filter(rowSums(across(everything(), ~ str_detect(., "low coverage"))) <= 50)
 
 #This is changing all data that matches the OLY077 column to "w303" so they can be marked as ancestral
 match_col <- "OLY077_S101"
@@ -166,7 +167,7 @@ mel_subset <- mel_RMancestral[apply(mel_RMancestral[, 10:121], 1, function(x) an
 mel_subset_test <- mel_subset[apply(mel_subset[, 10:121], 1, function(x) any(grepl("0", x))), ]
 
 #This is to get what sites to annotate
-sites_to_check0 <- data.frame(matrix(nrow=1041,ncol=1)) # AB changed to 347 from 268
+sites_to_check0 <- data.frame(matrix(nrow=1949,ncol=1)) # AB changed to 347 from 268 # JC changed to 1949
 sites_to_check0$key <- paste(mel_subset$chr, mel_subset$POS, sep="_")
 sites_to_check <- sites_to_check0 %>% 
   select(key) %>% 
@@ -181,7 +182,7 @@ no00remove has 79 evo lines
 no00keep has 107 evo lines
 
 ```{r}
-annot <- read.csv("snps/sites_list_subset_ANNOTJoel_20230919.csv") %>% 
+annot <- read.csv("snps/sites_list_subset_ANNOTJoel_20230927.csv") %>% 
   rename("chr"="CHR") %>% 
   arrange(chr, POS)
 
@@ -200,7 +201,7 @@ mel_mut <- mel_subset %>%
 
 mel_mut_annot <- left_join(mel_mut, annot, by = c('chr', 'POS')) %>% 
   #replace(is.na(.), 0) %>% 
-  select(-c(FUNCTION:X.2)) %>% 
+  select(-c(FUNCTION:X.5)) %>% 
   filter(GENE!="NAG") %>% 
   relocate(GENE, .after=ALT) %>% 
   # These next two steps remove unknown or putative areas
@@ -212,8 +213,9 @@ mel_mut_annot <- left_join(mel_mut, annot, by = c('chr', 'POS')) %>%
   # reorder columns
   relocate(gene_code, .before = GENE) %>% 
   relocate(metal, .before = evo_line) %>% 
-  select(-genotype) #%>% 
- # write.csv("snps/mutations_haploid.csv")
+  select(-genotype)
+ 
+mel_mut_annot %>% write.csv("snps/mutations_haploid.csv")
 
 mel_mut_annot$GENE_abbrev <- str_extract(mel_mut_annot$GENE, "^.*(?= - )")
 mel_mut_annot <- mel_mut_annot %>% 
