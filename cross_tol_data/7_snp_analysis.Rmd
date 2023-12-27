@@ -268,10 +268,11 @@ gene.pres = gene.pres.all %>%
 gene.pres$code_2 <- name_codes$code_2[match(gene.pres$evo_line,name_codes$code_1)]
 
 # cross.tolerance add to the gene/snp data
+# average of each line in every other environment excluding home and ancestral  environments
 fit.strain_summary <- fit.strain %>% 
-  filter(E2!=".YPAD") %>% 
+  filter(E2!=".YPAD") %>% # exclude ancestral
   filter(E1!=".YPAD") %>% 
-  filter(E2!=E1) %>% # 
+  filter(E2!=E1) %>% # #exclude home
   Rmisc::summarySE(measurevar = "relfit1", groupvars = c("strain"))
 gene.pres$cross.tolerance = fit.strain_summary$relfit1[match(gene.pres$code_2,fit.strain_summary$strain)]
 
