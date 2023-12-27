@@ -16,7 +16,7 @@ name_codes = read_csv("code_strain_line.csv")
 
 ```{r}
 
-mel_raw0 <- read.table("snps/full_genome.table", header=TRUE)
+mel_raw0 <- read.table("snps/full_genome.table", header=TRUE) # vcf file with lines at the beginning removed
 
 p1 <- ggplot(mel_raw0, aes(x=QD)) + geom_density()
 p2 <- ggplot(mel_raw0, aes(x=FS)) + geom_density()
