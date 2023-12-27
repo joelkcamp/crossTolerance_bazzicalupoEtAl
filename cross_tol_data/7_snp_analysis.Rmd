@@ -167,7 +167,7 @@ mel_subset <- mel_RMancestral[apply(mel_RMancestral[, 10:121], 1, function(x) an
 mel_subset_test <- mel_subset[apply(mel_subset[, 10:121], 1, function(x) any(grepl("0", x))), ]
 
 #This is to get what sites to annotate
-sites_to_check0 <- data.frame(matrix(nrow=1949,ncol=1)) # AB changed to 347 from 268 # JC changed to 1949
+sites_to_check0 <- data.frame(matrix(nrow=7725,ncol=1)) # AB changed to 347 from 268 # JC changed to 1949 #7725
 sites_to_check0$key <- paste(mel_subset$chr, mel_subset$POS, sep="_")
 sites_to_check <- sites_to_check0 %>% 
   select(key) %>% 
@@ -182,9 +182,9 @@ no00remove has 79 evo lines
 no00keep has 107 evo lines
 
 ```{r}
-annot <- read.csv("snps/sites_list_subset_ANNOTJoel_20230927.csv") %>% 
-  rename("chr"="CHR") %>% 
-  arrange(chr, POS)
+annot <- read.csv("snps/sites_list_subset_ANNOTJoel_20230927.csv")
+annot <-  plyr::rename(annot, c("CHR"="chr"))
+annot <-  arrange(annot, chr, POS)
 
 mel_subset$POS <- as.integer(mel_subset$POS)
 
@@ -319,24 +319,45 @@ fit.cross.mut = fit.cross.mut %>%
 write_csv(fit.cross.mut, "snps/fit.cross.mut.csv")
 
 ```
-# make SNP heatmap 
+
+
+# make repeated SNP heatmap 
 
 ```{r}
-fit.cross.mut.gen = read_csv("snps/fit.cross.mut.gen.csv") 
-fit.cross.mut.gen$gene <- factor(fit.cross.mut.gen$gene, levels=c("no genome","no mutation","petite","CUP","chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr10","chr13","chr14","ABP1","ACC1","BNI4","CDC25","COX1","FCY2","GCD2","HBT1","HUL5","ISU1","KRE5","KTR3","LOS1","NFT1","OCA4","PHO81","PHO84","PMA1","PTK2","RCE1","RKM3","RRP46","RRP6","SAK1","SET2","SMC2","SNT2","SSK2","STE5","TFG1","YEF1","YHC1","YHC3","YPK1"))
+fit.cross.mut.gen = read_csv("snps/fit.cross.mut.rep.csv") 
+fit.cross.mut.gen$gene <- factor(fit.cross.mut.gen$gene, #levels=c("petite","CUP","chrI","chrII","chrIII","chrIV","chrV","chrVI","chrVII","chrX","chrXIII","chrXIV","RKM3*","KTR3*","BSD2","VCX1","MSS2","TOM1","FYV10","YRB2*","VTC1","SAK1*","DNF1","HUL5","SNT2","PMA1","RRP46","TFG1*","YOR1","KSP1","PRP8","PBS2","VTC4","PTK2","CDC25","SFP1","PHO84","RSE1*","FET4","SIW14","HHF2*","MAM3","PDR10","PPQ1"))
 
-fit.cross.mut.gen %>% 
+#alphabetical
+#levels=c("petite","CUP","chrI","chrII","chrIII","chrIV","chrV","chrVI","chrVII","chrX","chrXIII","chrXIV","ACC1*","BSD2","CDC25","DNF1","FET4","FYV10","HHF2*","HUL5","KSP1","KTR3*","MAM3","MSS2","PBS2","PDR10","PHO84","PMA1","PPQ1","PRP8","PTK2","RKM3*","RRP46*","RSE1*","SAK1*","SFP1","SIW14","SNT2","TFG1*","TOM1","VCX1","VTC1","VTC4","YOR1","YRB2*"))
+
+#evolved in same environment? single to overlap. 
+levels=c("KTR3*","YRB2*","FET4","SIW14","VTC4","VTC1","RSE1*","TFG1*","VCX1","PDR10","MSS2","CDC25","PRP8","ACC1*","PBS2","SAK1*","SFP1","DNF1","HUL5","YOR1","PPQ1","KSP1","MAM3","TOM1","FYV10","RKM3*","HHF2*","PTK2","RRP46*","SNT2","BSD2","PMA1","PHO84"))
+fit.cross.mut.gen$gene = fct_rev(fit.cross.mut.gen$gene)
+
+fit.cross.mut.gen %>%
+  drop_na(gene)%>% 
+  filter(strain!="MnBM21")%>% 
   ggplot(aes(strain, gene, fill= cross.tolerance)) + 
   geom_tile()+
   scale_fill_viridis(discrete=FALSE) +
   labs(fill = "Cross\nTolerance")+
   labs(x="Evolved Line", y="")+
   theme_bw() +
-  theme(axis.text.x  = element_text(angle=90, size=7, vjust = 0.5, hjust=0.5))+
-  theme(axis.text.y  = element_text(size=8, vjust = 0.5, hjust=0.5))
+  theme(axis.text.x  = element_text(angle = 90, size=9, vjust = 0.5, hjust=0.5))+
+  theme(axis.text.y  = element_text(size=10, vjust = 0.5, hjust=0.5))
 
-ggsave("figures/mutation_heatmap.jpeg", width=14, height=8, units = "in", dpi=700)
+
+ggsave("figures/mutation_rep_heatmap.jpeg", width=14, height=8, units = "in", dpi=700)
+
+
+fit.cross.mut.gen %>%
+  ggplot(aes(E1, cross.tolerance)) +
+  geom_violin(trim=FALSE) +
+  stat_summary(fun.data=mean_sdl, mult=1, geom="pointrange") +
+  #geom_dotplot(binaxis='y', stackdir='center', dotsize=1) +
+  theme_bw()
+
+ggsave("figures/mult_sing_metal.jpeg", width=14, height=8, units = "in", dpi=700)
 
 
 ```
-
