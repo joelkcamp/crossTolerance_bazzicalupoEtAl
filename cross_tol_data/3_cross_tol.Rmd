@@ -10,6 +10,8 @@ library(broom)
 library(Rmisc)
 library(ggthemes)
 library(cowplot)
+library(dplyr)
+library(plyr)
 ```
 
 Setting color palette
@@ -389,139 +391,139 @@ met2 <- c("Co","Cu","Mn","Ni","Zn","Cu","Mn","Ni","Zn","Mn","Ni","Zn","Ni","Zn",
 # extract rel fit
 CDCO <- ct_cal %>%   
   filter(combo %in% c("CdCd","CdCo","CoCd","CoCo")) %>%
-  select(relfit1)  %>%
-  rename(CdCo = relfit1) 
-CDCO <- data.frame(t(CDCO)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)  
+CDCO <-  plyr::rename(CDCO, c("relfit1" = "CdCo" )) 
+CDCO <- data.frame(t(CDCO))
+CDCO <- plyr::rename(CDCO, c("X1" = "x_x")) 
+CDCO <-   plyr::rename(CDCO, c("X2" = "x_y"))
+CDCO <-   plyr::rename(CDCO, c("X3" = "y_x"))
+CDCO <-   plyr::rename(CDCO, c("X4" = "y_y"))
 CDCU <- ct_cal %>% 
   filter(combo %in% c("CdCd","CdCu","CuCd","CuCu")) %>%
-  select(relfit1) %>%
-  rename(CdCu = relfit1)
-CDCU <- data.frame(t(CDCU)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1) 
+CDCU <- plyr::rename(CDCU, c("relfit1" = "CdCu"))
+CDCU <- data.frame(t(CDCU))
+CDCU <-   plyr::rename(CDCU, c("X1" = "x_x"))
+CDCU <-   plyr::rename(CDCU, c("X2" = "x_y"))
+CDCU <-   plyr::rename(CDCU, c("X3" = "y_x"))
+CDCU <-   plyr::rename(CDCU, c("X4" = "y_y"))
 CDMN <- ct_cal %>% 
   filter(combo %in% c("CdCd","CdMn","MnCd","MnMn")) %>%
-  select(relfit1) %>%
-  rename(CdMn = relfit1)
-CDMN <- data.frame(t(CDMN)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+CDMN  <- plyr::rename(CDMN, c("relfit1" = "CdMn" ))
+CDMN <- data.frame(t(CDMN)) 
+CDMN <-  plyr::rename(CDMN, c("X1" = "x_x")) 
+CDMN <-  plyr::rename(CDMN, c("X2" = "x_y")) 
+CDMN <-  plyr::rename(CDMN, c("X3" = "y_x")) 
+CDMN <-  plyr::rename(CDMN, c("X4" = "y_y"))
 CDNI <- ct_cal %>% 
   filter(combo %in% c("CdCd","CdNi","NiCd","NiNi")) %>%
-  select(relfit1) %>%
-  rename(CdNi = relfit1)
-CDNI <- data.frame(t(CDNI)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+CDNI  <- plyr::rename(CDNI, c("relfit1" = "CdNi" ))
+CDNI <- data.frame(t(CDNI)) 
+CDNI <-  plyr::rename(CDNI, c("X1" = "x_x")) 
+ CDNI <- plyr::rename(CDNI, c("X2" = "x_y")) 
+CDNI <-  plyr::rename(CDNI, c("X3" = "y_x")) 
+CDNI <-  plyr::rename(CDNI, c("X4" = "y_y"))
 CDZN <- ct_cal %>% 
   filter(combo %in% c("CdCd","CdZn","ZnCd","ZnZn")) %>%
-  select(relfit1) %>%
-  rename(CdZn = relfit1)
-CDZN <- data.frame(t(CDZN)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+CDZN  <- plyr::rename(CDZN, c("relfit1" = "CdZn" ))
+CDZN <- data.frame(t(CDZN)) 
+CDZN <-  plyr::rename(CDZN, c("X1" = "x_x")) 
+CDZN <-  plyr::rename(CDZN, c("X2" = "x_y")) 
+CDZN <-  plyr::rename(CDZN, c("X3" = "y_x")) 
+ CDZN <- plyr::rename(CDZN, c("X4" = "y_y"))
 COCU <- ct_cal %>% 
   filter(combo %in% c("CoCo","CoCu","CuCo","CuCu")) %>%
-  select(relfit1) %>%
-  rename(CoCu = relfit1)
-COCU <- data.frame(t(COCU)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+COCU  <- plyr::rename(COCU, c("relfit1" = "CoCu" ))
+COCU <- data.frame(t(COCU)) 
+COCU <-  plyr::rename(COCU, c("X1" = "x_x")) 
+COCU <-  plyr::rename(COCU, c("X2" = "x_y")) 
+COCU <-  plyr::rename(COCU, c("X3" = "y_x")) 
+COCU <-  plyr::rename(COCU, c("X4" = "y_y"))
 COMN <- ct_cal %>% 
   filter(combo %in% c("CoCo","CoMn","MnCo","MnMn")) %>%
-  select(relfit1) %>%
-  rename(CoMn = relfit1)
-COMN <- data.frame(t(COMN)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+COMN  <- plyr::rename(COMN, c("relfit1" = "CoMn" ))
+COMN <- data.frame(t(COMN)) 
+COMN <-  plyr::rename(COMN, c("X1" = "x_x")) 
+COMN <-  plyr::rename(COMN, c("X2" = "x_y")) 
+COMN <-  plyr::rename(COMN, c("X3" = "y_x")) 
+COMN <-  plyr::rename(COMN, c("X4" = "y_y"))
 CONI <- ct_cal %>% 
   filter(combo %in% c("CoCo","CoNi","NiCo","NiNi")) %>%
-  select(relfit1) %>%
-  rename(CoNi = relfit1)
-CONI <- data.frame(t(CONI)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+CONI  <- plyr::rename(CONI, c("relfit1" = "CoNi" ))
+CONI <- data.frame(t(CONI)) 
+CONI <-  plyr::rename(CONI, c("X1" = "x_x")) 
+CONI <-  plyr::rename(CONI, c("X2" = "x_y")) 
+CONI <-  plyr::rename(CONI, c("X3" = "y_x")) 
+CONI <-  plyr::rename(CONI, c("X4" = "y_y"))
 COZN <- ct_cal %>% 
   filter(combo %in% c("CoCo","CoZn","ZnCo","ZnZn")) %>%
-  select(relfit1) %>%
-  rename(CoZn = relfit1)
-COZN <- data.frame(t(COZN)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+COZN  <- plyr::rename(COZN, c("relfit1" = "CoZn" ))
+COZN <- data.frame(t(COZN)) 
+COZN <-  plyr::rename(COZN, c("X1" = "x_x")) 
+COZN <-  plyr::rename(COZN, c("X2" = "x_y")) 
+COZN <-  plyr::rename(COZN, c("X3" = "y_x")) 
+ COZN <- plyr::rename(COZN, c("X4" = "y_y"))
 CUMN <- ct_cal %>% 
   filter(combo %in% c("CuCu","CuMn","MnCu","MnMn")) %>%
-  select(relfit1) %>%
-  rename(CuMn = relfit1)
-CUMN <- data.frame(t(CUMN)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+CUMN  <- plyr::rename(CUMN, c("relfit1" = "CuMn" ))
+CUMN <- data.frame(t(CUMN)) 
+CUMN <-  plyr::rename(CUMN, c("X1" = "x_x")) 
+CUMN <-  plyr::rename(CUMN, c("X2" = "x_y")) 
+CUMN <-  plyr::rename(CUMN, c("X3" = "y_x")) 
+CUMN <-  plyr::rename(CUMN, c("X4" = "y_y"))
 CUNI <- ct_cal %>% 
   filter(combo %in% c("CuCu","CuNi","NiCu","NiNi")) %>%
-  select(relfit1) %>%
-  rename(CuNi = relfit1)
-CUNI <- data.frame(t(CUNI)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+CUNI  <- plyr::rename(CUNI, c("relfit1" = "CuNi" ))
+CUNI <- data.frame(t(CUNI)) 
+CUNI <-  plyr::rename(CUNI, c("X1" = "x_x")) 
+CUNI <-  plyr::rename(CUNI, c("X2" = "x_y")) 
+CUNI <-  plyr::rename(CUNI, c("X3" = "y_x")) 
+CUNI <-  plyr::rename(CUNI, c("X4" = "y_y"))
 CUZN <- ct_cal %>% 
   filter(combo %in% c("CuCu","CuZn","ZnCu","ZnZn")) %>%
-  select(relfit1) %>%
-  rename(CuZn = relfit1)
-CUZN <- data.frame(t(CUZN)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+CUZN  <- plyr::rename(CUZN, c("relfit1" = "CuZn" ))
+CUZN <- data.frame(t(CUZN)) 
+CUZN <-  plyr::rename(CUZN, c("X1" = "x_x")) 
+CUZN <-  plyr::rename(CUZN, c("X2" = "x_y")) 
+CUZN <-  plyr::rename(CUZN, c("X3" = "y_x")) 
+CUZN <-  plyr::rename(CUZN, c("X4" = "y_y"))
 MNNI <- ct_cal %>% 
   filter(combo %in% c("MnMn","MnNi","NiMn","NiNi")) %>%
-  select(relfit1) %>%
-  rename(MnNi = relfit1)
-MNNI <- data.frame(t(MNNI)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+MNNI  <- plyr::rename(MNNI, c("relfit1" = "MnNi" ))
+MNNI <- data.frame(t(MNNI))
+MNNI <-  plyr::rename(MNNI, c("X1" = "x_x")) 
+MNNI <-  plyr::rename(MNNI, c("X2" = "x_y")) 
+MNNI <-  plyr::rename(MNNI, c("X3" = "y_x")) 
+MNNI <-  plyr::rename(MNNI, c("X4" = "y_y"))
 MNZN <- ct_cal %>% 
   filter(combo %in% c("MnMn","MnZn","ZnMn","ZnZn")) %>%
-  select(relfit1) %>%
-  rename(MnZn = relfit1)
-MNZN <- data.frame(t(MNZN)) %>%
-  rename(x_x = X1) %>%
-  rename(x_y = X2) %>%
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+MNZN  <- plyr::rename(MNZN, c("relfit1" = "MnZn" ))
+MNZN <- data.frame(t(MNZN)) 
+MNZN <-  plyr::rename(MNZN, c("X1" = "x_x")) 
+MNZN <-  plyr::rename(MNZN, c("X2" = "x_y")) 
+MNZN <-  plyr::rename(MNZN, c("X3" = "y_x")) 
+MNZN <-  plyr::rename(MNZN, c("X4" = "y_y"))
 NIZN <- ct_cal %>% 
   filter(combo %in% c("NiNi","NiZn","ZnNi","ZnZn")) %>%
-  select(relfit1) %>%
-  rename(NiZn = relfit1)
-NIZN <- data.frame(t(NIZN)) %>%
-  rename(x_x = X1) %>% #NiNi
-  rename(x_y = X2) %>% #NiZn
-  rename(y_x = X3) %>%
-  rename(y_y = X4)
+  select(relfit1)
+NIZN  <- plyr::rename(NIZN, c("relfit1" = "NiZn"))
+NIZN <- data.frame(t(NIZN)) 
+NIZN <-  plyr::rename(NIZN, c("X1" = "x_x"))  #NiNi
+NIZN <-  plyr::rename(NIZN, c("X2" = "x_y"))  #NiZn
+NIZN <-  plyr::rename(NIZN, c("X3" = "y_x")) 
+NIZN <-  plyr::rename(NIZN, c("X4" = "y_y"))
 
 combo <- c("CdCo","CdCu","CdMn","CdNi","CdZn","CoCu","CoMn","CoNi","CoZn","CuMn","CuNi","CuZn","MnNi","MnZn","NiZn")
 
@@ -533,7 +535,7 @@ cross.tol.combos = rbind(CDCO,CDCU,CDMN,CDNI,CDZN,COCU,COMN,CONI,COZN,CUMN,CUNI,
 
 
 cross.tol.combos = cross.tol.combos %>% 
-  mutate(ct = (x_y/x_x + y_x/y_y)/2) %>%
+  mutate(ct = ((x_y/x_x) + (y_x/y_y))/2) %>%
   cbind(combo)
 
 
