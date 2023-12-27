@@ -56,6 +56,8 @@ usgsvis = read_csv('predictions/soilmet_trans_combos.csv')
 ORP = read_csv('predictions/elect_pot_both.csv')
 ORP$diff = 1-(ORP$sim)
 ORPvis = read_csv('predictions/ele_pot.csv')
+ORPvis$diff = 1-(ORPvis$ORP)
+
 met_ppm = read_csv("predictions/met_ppm.csv")
 
 petite = read_csv('raw_outcross_petite/petites.csv')
@@ -76,7 +78,6 @@ mydata3$prop.syn <- prop_pleio$prop.syn[match(mydata3$combo,prop_pleio$combo)]
 mydata3$no.genes <- prop_pleio$no.genes[match(mydata3$combo,prop_pleio$combo)] 
 mydata3$all_slope <- usgs$all_slope[match(mydata3$combo,usgs$combo)] 
 mydata3$ORP <- ORP$diff[match(mydata3$combo,ORP$combo)] 
-mydata3$ppm <- met_ppm$ppm[match(mydata3$E1,met_ppm$metal)] 
 mydata3$petite <- petites$petite[match(mydata3$strain,petites$strain)] 
 
 react.norm =mydata3
@@ -101,7 +102,6 @@ hist(log(var_data3$relfit)) # that's better
 hist(var_data3$ORP) # this looks bimodal and I don't know
 hist(var_data3$prop.syn) # this almost looks normal?
 hist(var_data3$all_slope) # 
-hist(log(var_data3$ppm)) # 
 ```
 
 
@@ -111,7 +111,6 @@ plot data against relfit1
 plot(var_data3$ORP,var_data3$relfit) #is this a negative slope???? so the more different the oxidative reduction potential of the media are, the more cross-tolerance?? UGH i don't know
 plot(var_data3$prop.syn,var_data3$relfit)
 plot(var_data3$all_slope,var_data3$relfit)
-plot(log(var_data3$ppm),var_data3$relfit) #is this a negative slope???? so the more different the oxidative reduction 
 
 var_lm = lm(log(relfit+1) ~ E2+E1+E1:E2+machine,data=var_data3)
 summary(var_lm)
@@ -135,16 +134,13 @@ anova(var_lmer)
 
 ```{r}
 cross.tol.combos = read_csv("mbm_intermediate_files/pairs_cross_tolerance.csv")
-prop_pleiovis <- read.csv("predictions/prop_pleio.csv")
-ORPvis = read_csv('predictions/ele_pot.csv')
-usgsvis = read_csv('predictions/soilmet_trans_combos.csv') 
 usgsvis$comba <- paste(usgsvis$reference, usgsvis$combo, sep= "")
 
 
 cross.tol.combos$prop.syn <- prop_pleiovis$prop.syn[match(cross.tol.combos$combo,prop_pleiovis$combo)] 
 cross.tol.combos$no.genes <- prop_pleiovis$no.genes[match(cross.tol.combos$combo,prop_pleiovis$combo)] 
 cross.tol.combos$all_slope <- usgsvis$all_slope[match(cross.tol.combos$combo,usgsvis$comba)] 
-cross.tol.combos$ORP <- ORPvis$ORP[match(cross.tol.combos$combo,ORPvis$combo)] 
+cross.tol.combos$ORP <- ORPvis$diff[match(cross.tol.combos$combo,ORPvis$combo)] 
 
 lm_ct =lm(ct ~ prop.syn + all_slope + ORP, data=cross.tol.combos)
 lm_ct_prop =lm(ct ~ prop.syn , data=cross.tol.combos)
@@ -154,14 +150,17 @@ summary(lm_ct)
 summary(lm_ct_prop)
 summary(lm_ct_slope)
 summary(lm_ct_orp)
+```
 
+# plot the linear models of the pairs of metals against the predictions
+```{r}
 
 ct_orp =cross.tol.combos %>% 
   ggplot(aes(x=ORP,y=ct)) +
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted metal co-occurrence", y="Cross-tolerance")
+    labs(x="Predicted environmental distance", y="Cross-tolerance for pairs of metals")
 ct_orp
 
 ct_slope =cross.tol.combos %>% 
@@ -169,7 +168,7 @@ ct_slope =cross.tol.combos %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted metal co-occurrence", y="Cross-tolerance")
+    labs(x="Predicted metal co-occurrence", y="Cross-tolerance for pairs of metals")
 ct_slope
 
 ct_prop =cross.tol.combos %>% 
@@ -177,7 +176,7 @@ ct_prop =cross.tol.combos %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted metal co-occurrence", y="Cross-tolerance")
+    labs(x="Predicted proportion of gene overlap", y="Cross-tolerance for pairs of metals")
 ct_prop
 
 
@@ -192,7 +191,7 @@ orplin=mydata3 %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted environmental distance", y="Relative Fitness")
+    labs(x="Predicted environmental distance", y="Cross-tolerance per evolved line")
 
 
 proplin=mydata3 %>% 
@@ -200,7 +199,7 @@ proplin=mydata3 %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted proportion of gene overlap", y="Relative Fitness")
+    labs(x="Predicted proportion of gene overlap", y="Cross-tolerance per evolved line")
 
 
 usgslin=mydata3 %>% 
@@ -208,7 +207,7 @@ usgslin=mydata3 %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted metal co-occurrence", y="Relative Fitness")
+    labs(x="Predicted metal co-occurrence", y="Cross-tolerance per evolved line")
 
 
 
@@ -257,15 +256,17 @@ usgsmap=usgsvis %>%
 
 ```{r }
 p1=plot_grid(
-  orpmap, orplin, labels = c("A","B"),
-  ncol = 2, rel_widths = c(2, .75)
+  orpmap, ct_orp, orplin, labels = c("A","B", "C"),
+  ncol = 3
 )
-p2=plot_grid(propmap, proplin, labels = c("C","D"),
-  ncol = 2, rel_widths = c(2, .75)
+p2=plot_grid(propmap,ct_prop,  proplin, labels = c("D","E", "F"),
+  ncol = 3
 )
-p3=plot_grid(usgsmap,usgslin, labels = c("E","F"),
-  ncol = 2, rel_widths = c(2, .75)
+p3=plot_grid(usgsmap,ct_slope, usgslin, labels = c("G","H", "I"),
+  ncol = 3
 )
 
-ggsave("figures/predictsquat.jpeg", width=9, height=15, units = "in", dpi=700)
+plot_grid(p1, p2, p3, ncol = 1)
+
+ggsave("figures/prediction_grid.jpeg", width=15, height=12, units = "in", dpi=700)
 ```
