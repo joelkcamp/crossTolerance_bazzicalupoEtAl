@@ -38,7 +38,7 @@ legend_title2 <- "Evolution\nEnvironment"
 legend_title3 = "Environment"
 ```
 
-get those fucking names right
+get those names right
 ```{r }
 
 name_codes = read_csv("code_strain_line.csv")
@@ -65,7 +65,7 @@ colnames(petites)[colnames(petites) == "code_2"] ="strain"
 
 ```
 
-
+# data to calculate cross-tolerance for each evolved line
 
 
 ```{r}
@@ -130,6 +130,58 @@ anova(var_lmer)
 
 ```
 
+
+#Cross tolerance new calculation
+
+```{r}
+cross.tol.combos = read_csv("mbm_intermediate_files/pairs_cross_tolerance.csv")
+prop_pleiovis <- read.csv("predictions/prop_pleio.csv")
+ORPvis = read_csv('predictions/ele_pot.csv')
+usgsvis = read_csv('predictions/soilmet_trans_combos.csv') 
+usgsvis$comba <- paste(usgsvis$reference, usgsvis$combo, sep= "")
+
+
+cross.tol.combos$prop.syn <- prop_pleiovis$prop.syn[match(cross.tol.combos$combo,prop_pleiovis$combo)] 
+cross.tol.combos$no.genes <- prop_pleiovis$no.genes[match(cross.tol.combos$combo,prop_pleiovis$combo)] 
+cross.tol.combos$all_slope <- usgsvis$all_slope[match(cross.tol.combos$combo,usgsvis$comba)] 
+cross.tol.combos$ORP <- ORPvis$ORP[match(cross.tol.combos$combo,ORPvis$combo)] 
+
+lm_ct =lm(ct ~ prop.syn + all_slope + ORP, data=cross.tol.combos)
+lm_ct_prop =lm(ct ~ prop.syn , data=cross.tol.combos)
+lm_ct_slope =lm(ct ~ all_slope , data=cross.tol.combos)
+lm_ct_orp =lm(ct ~  ORP, data=cross.tol.combos)
+summary(lm_ct)
+summary(lm_ct_prop)
+summary(lm_ct_slope)
+summary(lm_ct_orp)
+
+
+ct_orp =cross.tol.combos %>% 
+  ggplot(aes(x=ORP,y=ct)) +
+    geom_point() +
+    geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
+     theme_minimal() +
+    labs(x="Predicted metal co-occurrence", y="Cross-tolerance")
+ct_orp
+
+ct_slope =cross.tol.combos %>% 
+  ggplot(aes(x=all_slope,y=ct)) +
+    geom_point() +
+    geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
+     theme_minimal() +
+    labs(x="Predicted metal co-occurrence", y="Cross-tolerance")
+ct_slope
+
+ct_prop =cross.tol.combos %>% 
+  ggplot(aes(x=prop.syn,y=ct)) +
+    geom_point() +
+    geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
+     theme_minimal() +
+    labs(x="Predicted metal co-occurrence", y="Cross-tolerance")
+ct_prop
+
+
+```
 
 
 Data visualization
@@ -202,38 +254,6 @@ usgsmap=usgsvis %>%
 ```
 
 
-Make dataframe with ppm in YPAD of metals
-Average across all the samples with no excess of that metal.
-YPD is the "ecology" of our yeast
-Hypothesis: the amount of metal the yeast is generally exposed to will predict the quality of the environment (by quality I mean if excess will lead to specialized mutations or general mutations), OR the more of the metal in the media, the more specialized the mutations will be and less cross tolerance
-
-```{r }
-
-E1ppm_summary <- mydata3 %>% 
-  filter(E2!=".YPAD") %>% 
-  filter(E2!=E1) %>% # 
-  Rmisc::summarySE(measurevar = "relfit", groupvars = c("E1")) 
-
-E1ppm_summary$ppm <- met_ppm$ppm[match(met_ppm$metal,E1ppm_summary$E1)]
-
-anv_ppm=lm(relfit ~ log(ppm), data=E1ppm_summary)
-ppm_lmer <- lmer(1 + relfit ~ log(ppm) + (1|E1) ,data=mydata3)
-
-e1ppm=E1ppm_summary %>%
-  ggplot(aes(x=log(ppm),y=relfit,color=E1))+
-  geom_point(alpha=0.8, size=5, aes(group=E1))+ 
-    geom_errorbar(aes(ymin = relfit + ci, ymax = relfit - ci))+
-  scale_color_manual(legend_title3, values=relfitPalette2) + 
-  geom_abline(slope = coef(anv_ppm)[["log(ppm)"]],intercept = coef(anv_ppm)[["(Intercept)"]])+
-  #abline(lm(relfit1 ~ ppm, data=E1_summary))+
-    labs(x="Log of parts per million in YPD", y="Overall Genotype Quality")+
-    theme_bw() +
-    #xlim(-0.001,0.055)+
-    #ylim(-0.01,0.05)+
-    theme(legend.title=element_text(size=rel(0.75))) 
-#ggsave("E1_vs_ppm.jpeg", width=5, height=4, units = "in", dpi=700)
-
-```
 
 ```{r }
 p1=plot_grid(
@@ -246,8 +266,6 @@ p2=plot_grid(propmap, proplin, labels = c("C","D"),
 p3=plot_grid(usgsmap,usgslin, labels = c("E","F"),
   ncol = 2, rel_widths = c(2, .75)
 )
-plot_grid(p1,p2,p3,e1ppm, labels = c("","","","G"),
-  ncol = 1
-)
+
 ggsave("figures/predictsquat.jpeg", width=9, height=15, units = "in", dpi=700)
 ```
