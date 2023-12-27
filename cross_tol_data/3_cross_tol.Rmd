@@ -362,6 +362,185 @@ cross_tol=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),test_
 ggsave("figures/phenotypes1.jpeg", width=14, height=10, units = "in", dpi=700) # figure 2
 ```
 
+Calulating cross-tolerance between a pair of metals (X and Y) is the average ratio of growth in the non-evolved env’t to the evolved env’t.  That is, cross-tolerance would be:
+
+CT(X,Y) = (r_Y|X/r_X|X + r_X|Y/r_Y|Y)/2
+
+where r_Y|X is growth rate assayed in metal Y given an evolutionary history in X.  
+
+This measure would be 1 if growth in both environments is as good for lines evolved in the other metal as for those evolved in that metal (i.e., r_Y|X = r_X|X and r_X|Y = r_Y|Y).  It is zero if there is no growth in the non-evolved metal environment (i.e., r_Y|X = r_X|Y = 0).  Also, if an environment is harsher (say metal X), with growth rates all lower by a factor c in that metal, then this doesn’t make a difference (c*r_Y|X/(c*r_X|X) = r_Y|X/r_X|X).
+
+```{r}
+ct_cal <- all_summary1 %>%
+    filter(E1!=".YPAD") %>%   
+  filter(E2!=".YPAD") 
+
+
+ct_cal$combo <- paste(ct_cal$E1, ct_cal$E2, sep= "")
+ 
+
+combo <- c("CdCo","CdCu","CdMn","CdNi","CdZn","CoCu","CoMn","CoNi","CoZn","CuMn","CuNi","CuZn","MnNi","MnZn","NiZn")
+met1 <- c("Cd","Cd","Cd","Cd","Cd","Co","Co","Co","Co","Cu","Cu","Cu","Mn","Mn","Ni")
+met2 <- c("Co","Cu","Mn","Ni","Zn","Cu","Mn","Ni","Zn","Mn","Ni","Zn","Ni","Zn","Zn")
+
+
+#combos = c("x_x", "x_y", "y_x", "y_y")
+
+# extract rel fit
+CDCO <- ct_cal %>%   
+  filter(combo %in% c("CdCd","CdCo","CoCd","CoCo")) %>%
+  select(relfit1)  %>%
+  rename(CdCo = relfit1) 
+CDCO <- data.frame(t(CDCO)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CDCU <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdCu","CuCd","CuCu")) %>%
+  select(relfit1) %>%
+  rename(CdCu = relfit1)
+CDCU <- data.frame(t(CDCU)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CDMN <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdMn","MnCd","MnMn")) %>%
+  select(relfit1) %>%
+  rename(CdMn = relfit1)
+CDMN <- data.frame(t(CDMN)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CDNI <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdNi","NiCd","NiNi")) %>%
+  select(relfit1) %>%
+  rename(CdNi = relfit1)
+CDNI <- data.frame(t(CDNI)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CDZN <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdZn","ZnCd","ZnZn")) %>%
+  select(relfit1) %>%
+  rename(CdZn = relfit1)
+CDZN <- data.frame(t(CDZN)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+COCU <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoCu","CuCo","CuCu")) %>%
+  select(relfit1) %>%
+  rename(CoCu = relfit1)
+COCU <- data.frame(t(COCU)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+COMN <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoMn","MnCo","MnMn")) %>%
+  select(relfit1) %>%
+  rename(CoMn = relfit1)
+COMN <- data.frame(t(COMN)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CONI <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoNi","NiCo","NiNi")) %>%
+  select(relfit1) %>%
+  rename(CoNi = relfit1)
+CONI <- data.frame(t(CONI)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+COZN <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoZn","ZnCo","ZnZn")) %>%
+  select(relfit1) %>%
+  rename(CoZn = relfit1)
+COZN <- data.frame(t(COZN)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CUMN <- ct_cal %>% 
+  filter(combo %in% c("CuCu","CuMn","MnCu","MnMn")) %>%
+  select(relfit1) %>%
+  rename(CuMn = relfit1)
+CUMN <- data.frame(t(CUMN)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CUNI <- ct_cal %>% 
+  filter(combo %in% c("CuCu","CuNi","NiCu","NiNi")) %>%
+  select(relfit1) %>%
+  rename(CuNi = relfit1)
+CUNI <- data.frame(t(CUNI)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+CUZN <- ct_cal %>% 
+  filter(combo %in% c("CuCu","CuZn","ZnCu","ZnZn")) %>%
+  select(relfit1) %>%
+  rename(CuZn = relfit1)
+CUZN <- data.frame(t(CUZN)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+MNNI <- ct_cal %>% 
+  filter(combo %in% c("MnMn","MnNi","NiMn","NiNi")) %>%
+  select(relfit1) %>%
+  rename(MnNi = relfit1)
+MNNI <- data.frame(t(MNNI)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+MNZN <- ct_cal %>% 
+  filter(combo %in% c("MnMn","MnZn","ZnMn","ZnZn")) %>%
+  select(relfit1) %>%
+  rename(MnZn = relfit1)
+MNZN <- data.frame(t(MNZN)) %>%
+  rename(x_x = X1) %>%
+  rename(x_y = X2) %>%
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+NIZN <- ct_cal %>% 
+  filter(combo %in% c("NiNi","NiZn","ZnNi","ZnZn")) %>%
+  select(relfit1) %>%
+  rename(NiZn = relfit1)
+NIZN <- data.frame(t(NIZN)) %>%
+  rename(x_x = X1) %>% #NiNi
+  rename(x_y = X2) %>% #NiZn
+  rename(y_x = X3) %>%
+  rename(y_y = X4)
+
+combo <- c("CdCo","CdCu","CdMn","CdNi","CdZn","CoCu","CoMn","CoNi","CoZn","CuMn","CuNi","CuZn","MnNi","MnZn","NiZn")
+
+cross.tol.combos = rbind(CDCO,CDCU,CDMN,CDNI,CDZN,COCU,COMN,CONI,COZN,CUMN,CUNI,CUZN,MNNI,MNZN,NIZN)
+
+
+#CT(X,Y) = (r_Y|X/r_X|X + r_X|Y/r_Y|Y)/2
+# in this equation r_Y|X
+
+
+cross.tol.combos = cross.tol.combos %>% 
+  mutate(ct = (x_y/x_x + y_x/y_y)/2) %>%
+  cbind(combo)
+
+
+write_csv(cross.tol.combos, "mbm_intermediate_files/pairs_cross_tolerance.csv")
+
+```
+
 
 ```{r}
 react.norm = mydata6 
