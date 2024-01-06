@@ -1,0 +1,607 @@
+TERM	GENE
+nucleus	ACB1
+nucleus	ADR1
+nucleus	AFT1
+nucleus	ARO3
+nucleus	BIR1
+nucleus	BLM10
+nucleus	BNA6
+nucleus	BRR 2.00
+nucleus	CAJ1
+nucleus	CDC25
+nucleus	CLB3
+nucleus	CLN3
+nucleus	CSM3
+nucleus	CYK3
+nucleus	DOT6
+nucleus	ERB1
+nucleus	FIG4
+nucleus	FYV10
+nucleus	FYV6
+nucleus	FZF1
+nucleus	GRR1
+nucleus	HEH2
+nucleus	HIR2
+nucleus	HMF1
+nucleus	HO
+nucleus	HSP104
+nucleus	HUL5
+nucleus	IES3
+nucleus	IPI3
+nucleus	IRC20
+nucleus	ITC1
+nucleus	KAR3
+nucleus	KSP1
+nucleus	KTR3
+nucleus	LOS1
+nucleus	MCM5
+nucleus	MDH2
+nucleus	MDM30
+nucleus	MET30
+nucleus	MEX67
+nucleus	MKT1
+nucleus	MLH3
+nucleus	MOT1
+nucleus	MTR4
+nucleus	NAB2
+nucleus	NAM8
+nucleus	NPL3
+nucleus	NSR1
+nucleus	NUC1
+nucleus	NUG1
+nucleus	OPI1
+nucleus	PBP2
+nucleus	PCL5
+nucleus	PDR1
+nucleus	PHO23
+nucleus	PHO81
+nucleus	PHR1
+nucleus	PKC1
+nucleus	PRI2
+nucleus	PRP8
+nucleus	PTK2
+nucleus	RAD17
+nucleus	RAD26
+nucleus	RBK1
+nucleus	RCO1
+nucleus	REA1
+nucleus	RKM3
+nucleus	RMP1
+nucleus	ROG1
+nucleus	RPI1
+nucleus	RRP6
+nucleus	SET2
+nucleus	SFH5
+nucleus	SFP1
+nucleus	SHP 1.00
+nucleus	SMY2
+nucleus	SNT2
+nucleus	SPO20
+nucleus	SPT2
+nucleus	STE5
+nucleus	STP3
+nucleus	SUB2
+nucleus	SUM1
+nucleus	SWC5
+nucleus	SWT1
+nucleus	SYF2
+nucleus	TAF8
+nucleus	TAH11
+nucleus	TFB1
+nucleus	TOM1
+nucleus	TOP 1.00
+nucleus	TOP 2.00
+nucleus	UGA3
+nucleus	ULS1
+nucleus	UTP21
+nucleus	VID22
+nucleus	VPS74
+nucleus	WAR1
+nucleus	YAP6
+nucleus	YIH1
+nucleus	YRB2
+cytoplasm	ABP1
+cytoplasm	ACB1
+cytoplasm	ADE6
+cytoplasm	ADR1
+cytoplasm	AFT1
+cytoplasm	ALY2
+cytoplasm	ARO3
+cytoplasm	ASN1
+cytoplasm	ATG11
+cytoplasm	ATG2
+cytoplasm	BIR1
+cytoplasm	BNA6
+cytoplasm	BUL2
+cytoplasm	CCR4
+cytoplasm	CDC25
+cytoplasm	CLB3
+cytoplasm	CPA1
+cytoplasm	CSM3
+cytoplasm	CUE3
+cytoplasm	CYK3
+cytoplasm	DBF20
+cytoplasm	DDR48
+cytoplasm	DOT6
+cytoplasm	EBS1
+cytoplasm	ECM22
+cytoplasm	FLC2
+cytoplasm	FYV10
+cytoplasm	GPB1
+cytoplasm	GPB2
+cytoplasm	GPH1
+cytoplasm	GRR1
+cytoplasm	HIS4
+cytoplasm	HMF1
+cytoplasm	HSP104
+cytoplasm	HUL5
+cytoplasm	INP2
+cytoplasm	KSP1
+cytoplasm	KTR3
+cytoplasm	LOS1
+cytoplasm	LRG1
+cytoplasm	MCM5
+cytoplasm	MDH2
+cytoplasm	MEX67
+cytoplasm	MKT1
+cytoplasm	MLF 3.00
+cytoplasm	MLS1
+cytoplasm	MRL1
+cytoplasm	NAB2
+cytoplasm	NAM8
+cytoplasm	NPL3
+cytoplasm	OCA4
+cytoplasm	OCA5
+cytoplasm	PBP2
+cytoplasm	PBS2
+cytoplasm	PFK26
+cytoplasm	PHO81
+cytoplasm	PHR1
+cytoplasm	PKC1
+cytoplasm	PPQ1
+cytoplasm	PRC1
+cytoplasm	PTK2
+cytoplasm	PYK2
+cytoplasm	RAD26
+cytoplasm	RBK1
+cytoplasm	RCK2
+cytoplasm	RIM11
+cytoplasm	RMP1
+cytoplasm	ROG1
+cytoplasm	SAK1
+cytoplasm	SEC8
+cytoplasm	SFH5
+cytoplasm	SFP1
+cytoplasm	SHP 1.00
+cytoplasm	SIW14
+cytoplasm	SMY2
+cytoplasm	SNF7
+cytoplasm	SNT2
+cytoplasm	SPO77
+cytoplasm	SSE1
+cytoplasm	SSZ1
+cytoplasm	STE5
+cytoplasm	SUB2
+cytoplasm	SUC2
+cytoplasm	SWT1
+cytoplasm	TAH11
+cytoplasm	TOS3
+cytoplasm	TPS3
+cytoplasm	TRL 1
+cytoplasm	UBR2
+cytoplasm	ULS1
+cytoplasm	URA2
+cytoplasm	VPS74
+cytoplasm	YIH1
+cytoplasm	ZDS2
+mitochondrion	ACC1
+mitochondrion	ALD5
+mitochondrion	ARO3
+mitochondrion	BIR1
+mitochondrion	COQ1
+mitochondrion	COX1
+mitochondrion	CYT2
+mitochondrion	DNF1
+mitochondrion	DOA4
+mitochondrion	EFR3
+mitochondrion	ERG9
+mitochondrion	FAS2
+mitochondrion	FAU1
+mitochondrion	FKS3
+mitochondrion	FMP52
+mitochondrion	FSF1
+mitochondrion	GPB2
+mitochondrion	IDH1
+mitochondrion	IDP1
+mitochondrion	ILV2
+mitochondrion	IMA1
+mitochondrion	IRC20
+mitochondrion	ISU1
+mitochondrion	KGD1
+mitochondrion	LOS1
+mitochondrion	LRG1
+mitochondrion	MAS2
+mitochondrion	MCT1
+mitochondrion	MDL 2.00
+mitochondrion	MDM30
+mitochondrion	MOT1
+mitochondrion	MPA43
+mitochondrion	MRPL36
+mitochondrion	MSC6
+mitochondrion	MSS2
+mitochondrion	NSR1
+mitochondrion	NUC1
+mitochondrion	PDA1
+mitochondrion	PDX1
+mitochondrion	PET111
+mitochondrion	PET127
+mitochondrion	PHR1
+mitochondrion	PKP1
+mitochondrion	PMA1
+mitochondrion	PYK2
+mitochondrion	QRI7
+mitochondrion	REA1
+mitochondrion	RHO1
+mitochondrion	RTC2
+mitochondrion	SAP4
+mitochondrion	SMC2
+mitochondrion	SPC105
+mitochondrion	SSQ1
+mitochondrion	SUC2
+mitochondrion	SYG1
+mitochondrion	TAO3
+mitochondrion	TIM54
+mitochondrion	TOP 2.00
+mitochondrion	ULS1
+mitochondrion	URA2
+mitochondrion	VPS13
+mitochondrion	WAR1
+mitochondrion	YCK1
+mitochondrion	LAM1
+membrane	ACC1
+membrane	BNI1
+membrane	BSD 2.00
+membrane	CDC25
+membrane	CNE1
+membrane	CWH41
+membrane	ECM22
+membrane	ERG27
+membrane	ERG9
+membrane	FCY2
+membrane	FIG4
+membrane	FMP52
+membrane	FRE6
+membrane	GSC2
+membrane	INP2
+membrane	KTR3
+membrane	MAM3
+membrane	MDL 2.00
+membrane	MYO2
+membrane	NAR1
+membrane	NUC1
+membrane	OPI1
+membrane	PEP12
+membrane	PET111
+membrane	PIB1
+membrane	PMA1
+membrane	RCE1
+membrane	RHO1
+membrane	RTC2
+membrane	SEC8
+membrane	SFH5
+membrane	SKN1
+membrane	SMY2
+membrane	SPO20
+membrane	SYG1
+membrane	TCO89
+membrane	TRL 1
+membrane	UGA4
+membrane	URA2
+membrane	USA1
+membrane	UTH1
+membrane	VBA1
+membrane	VCX1
+membrane	VPS13
+membrane	VTC1
+membrane	VTC3
+membrane	VTC4
+membrane	YCF1
+membrane	NFT1
+membrane	YML018C
+membrane	ZRT3
+vacuole	BSD 2.00
+vacuole	CCW12
+vacuole	CWH41
+vacuole	ECM14
+vacuole	FCY2
+vacuole	FET4
+vacuole	FIG4
+vacuole	FRE6
+vacuole	GAS4
+vacuole	IRC8
+vacuole	KTR3
+vacuole	MAM3
+vacuole	MDL 2.00
+vacuole	MYO2
+vacuole	PAU10
+vacuole	PDR10
+vacuole	PEP12
+vacuole	PHM7
+vacuole	PHO84
+vacuole	PIB1
+vacuole	PRC1
+vacuole	RHO1
+vacuole	RNY1
+vacuole	RTC2
+vacuole	SFH5
+vacuole	SMF1
+vacuole	SUC2
+vacuole	SYG1
+vacuole	TCO89
+vacuole	UGA4
+vacuole	UIP5
+vacuole	VBA1
+vacuole	VCX1
+vacuole	VTC1
+vacuole	VTC3
+vacuole	VTC4
+vacuole	YCF1
+vacuole	YHC3
+vacuole	NFT1
+vacuole	YML018C
+vacuole	ZRT3
+endoplasmic reticulum	ACC1
+endoplasmic reticulum	AGP1
+endoplasmic reticulum	BSD 2.00
+endoplasmic reticulum	CDC25
+endoplasmic reticulum	CNE1
+endoplasmic reticulum	CWH41
+endoplasmic reticulum	DNF1
+endoplasmic reticulum	ERG1
+endoplasmic reticulum	ERG27
+endoplasmic reticulum	ERG9
+endoplasmic reticulum	FKS3
+endoplasmic reticulum	FLC2
+endoplasmic reticulum	FMP52
+endoplasmic reticulum	HXT13
+endoplasmic reticulum	IST2
+endoplasmic reticulum	KRE5
+endoplasmic reticulum	MAM3
+endoplasmic reticulum	MNN9
+endoplasmic reticulum	OPI1
+endoplasmic reticulum	OSH2
+endoplasmic reticulum	PHM7
+endoplasmic reticulum	PHO84
+endoplasmic reticulum	PRC1
+endoplasmic reticulum	RCE1
+endoplasmic reticulum	RHO1
+endoplasmic reticulum	RIM21
+endoplasmic reticulum	SFH5
+endoplasmic reticulum	SMY2
+endoplasmic reticulum	STT3
+endoplasmic reticulum	UBX7
+endoplasmic reticulum	USA1
+endoplasmic reticulum	VTC1
+endoplasmic reticulum	VTC3
+endoplasmic reticulum	VTC4
+endoplasmic reticulum	YCK1
+endoplasmic reticulum	YCT1
+endoplasmic reticulum	LAM1
+endoplasmic reticulum	YLR372W
+endoplasmic reticulum	ZRT1
+endoplasmic reticulum	ZRT3
+plasma membrane	AGP1
+plasma membrane	BNI1
+plasma membrane	CAJ1
+plasma membrane	CDC25
+plasma membrane	DNF1
+plasma membrane	EFR3
+plasma membrane	FCY2
+plasma membrane	FET4
+plasma membrane	GPB1
+plasma membrane	GPB2
+plasma membrane	HBT1
+plasma membrane	IST2
+plasma membrane	KIN1
+plasma membrane	OSH2
+plasma membrane	PDR10
+plasma membrane	PHO84
+plasma membrane	PKC1
+plasma membrane	PMA1
+plasma membrane	PTK2
+plasma membrane	RHO1
+plasma membrane	RIM21
+plasma membrane	SFH5
+plasma membrane	SMF1
+plasma membrane	SNF7
+plasma membrane	SPO20
+plasma membrane	STE5
+plasma membrane	SYG1
+plasma membrane	TRK2
+plasma membrane	VID22
+plasma membrane	YCK1
+plasma membrane	
+plasma membrane	YOR1
+plasma membrane	ZRT1
+site of polarized growth	ABP1
+site of polarized growth	ABP140
+site of polarized growth	ACT1
+site of polarized growth	BNI1
+site of polarized growth	BNI4
+site of polarized growth	CCW12
+site of polarized growth	CYK3
+site of polarized growth	DBF20
+site of polarized growth	DNF1
+site of polarized growth	DSE4
+site of polarized growth	GRR1
+site of polarized growth	GSC2
+site of polarized growth	HSL1
+site of polarized growth	LRG1
+site of polarized growth	MYO2
+site of polarized growth	OSH2
+site of polarized growth	PBS2
+site of polarized growth	PKC1
+site of polarized growth	RHO1
+site of polarized growth	SEC8
+site of polarized growth	SSK2
+site of polarized growth	STE5
+site of polarized growth	TAO3
+site of polarized growth	TUS1
+site of polarized growth	UBP5
+site of polarized growth	VRP1
+site of polarized growth	YKL126W
+site of polarized growth	ZDS2
+cellular bud	ACT1
+cellular bud	BNI1
+cellular bud	BNI4
+cellular bud	CCW12
+cellular bud	CYK3
+cellular bud	DBF20
+cellular bud	DNF1
+cellular bud	DSE4
+cellular bud	GRR1
+cellular bud	GSC2
+cellular bud	HSL1
+cellular bud	IRC8
+cellular bud	IST2
+cellular bud	LRG1
+cellular bud	MYO2
+cellular bud	OSH2
+cellular bud	PBS2
+cellular bud	PKC1
+cellular bud	RHO1
+cellular bud	SEC8
+cellular bud	SSK2
+cellular bud	TAO3
+cellular bud	TUS1
+cellular bud	UBP5
+cellular bud	VRP1
+cellular bud	YKL126W
+cellular bud	ZDS2
+nucleolus	CIC1
+nucleolus	ERB1
+nucleolus	MTR4
+nucleolus	NSR1
+nucleolus	NUG1
+nucleolus	RMP1
+nucleolus	RRB1
+nucleolus	RRP5
+nucleolus	RRP6
+nucleolus	TOM1
+nucleolus	TOP 1.00
+nucleolus	ULS1
+nucleolus	URB1
+nucleolus	UTP21
+nucleolus	UTP8
+cell cortex	ABP1
+cell cortex	ACT1
+cell cortex	BNI4
+cell cortex	CYK3
+cell cortex	GRR1
+cell cortex	HSL1
+cell cortex	IST2
+cell cortex	OSH2
+cell cortex	SFH5
+cell cortex	SSK2
+cell cortex	VRP1
+cell cortex	LAM1
+mitochondrial envelope	CYT2
+mitochondrial envelope	ERG27
+mitochondrial envelope	ERG9
+mitochondrial envelope	FMP52
+mitochondrial envelope	HMF1
+mitochondrial envelope	MDL 2.00
+mitochondrial envelope	NUC1
+mitochondrial envelope	PET111
+mitochondrial envelope	PET127
+mitochondrial envelope	RHO1
+mitochondrial envelope	UTH1
+cytoskeleton	ABP1
+cytoskeleton	ABP140
+cytoskeleton	ACT1
+cytoskeleton	BNI4
+cytoskeleton	CYK3
+cytoskeleton	GRR1
+cytoskeleton	HSL1
+cytoskeleton	MYO2
+cytoskeleton	PKC1
+cytoskeleton	VRP1
+peroxisome	INP2
+peroxisome	MLS1
+peroxisome	RHO1
+peroxisome	SWS2
+peroxisome	TOS3
+cell wall	CCW12
+cell wall	DSE4
+cell wall	FIG2
+cell wall	GAS4
+cell wall	PLB2
+chromosome	MCM5
+chromosome	POL3
+chromosome	SMC2
+chromosome	SUB2
+chromosome	TOP 2.00
+chromosome	RED1
+chromosome	REC102
+chromosome	SPO11
+Golgi apparatus	MNN9
+Golgi apparatus	PEP12
+Golgi apparatus	RHO1
+Golgi apparatus	SBE2
+Golgi apparatus	VPS74
+extracellular region	ACB1
+extracellular region	PLB2
+extracellular region	RNY1
+extracellular region	SUC2
+endomembrane system	MYO2
+cytoplasmic vesicle	MYO2
+RNA polymerase II transcription regulator complex	TFG1
+RNA polymerase II transcription regulator complex	MED6
+RNA polymerase II transcription regulator complex	OAF1
+transcription export complex	YRA1
+ribosomal subunit	RPL22A
+ribosomal subunit	RPS2
+ribosomal subunit	RPS15
+ribosomal subunit	RPL2A
+lipid droplet	ERG7
+lipid droplet	TGL5
+cytosol	TRT2
+cytosol	UBC1
+cytosol	GCD2
+spliceosomal complex	CWC22
+spliceosomal complex	YHC1
+spliceosomal complex	PRP2
+spliceosomal complex	RSE1
+DNA polymerase complex	PRI1
+ubiquitin ligase complex	HRT3
+ubiquitin ligase complex	BUL1
+ubiquitin ligase complex	APC2
+ubiquitin ligase complex	RAD16
+microtubule associated complex	NIP100
+SWI/SNF superfamily-type complex	IOC4
+SWI/SNF superfamily-type complex	RSC1
+endonuclease complex	MMS4
+Golgi transport complex	COG1
+Golgi transport complex	COG3
+histone deacetylase complex	UME6
+RNA polymerase I complex	RPA135
+"proteasome regulatory particle, base subcomplex"	RPT5
+sulfite reductase complex	MET10
+exosome	RRP46
+clathrin vesicle coat	CHC1
+nucleosome	HHF2
+AP-3 adaptor complex	APL5
+microtubule	MHP1
+unknown	YJL211C
+unknown	BUD19
+unknown	YLR198C
+unknown	YDR269C
+unknown	YFL021C-A
+unknown	KIN82
+unknown	VPS63
+unknown	YEF1
+unknown	DUS4
+unknown	SPS100
+unknown	BDS1
+unknown	MCK1
+unknown	DAL2

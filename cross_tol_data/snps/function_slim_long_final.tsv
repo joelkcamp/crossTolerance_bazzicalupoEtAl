@@ -1,0 +1,263 @@
+TERM	GENE
+ion binding	ACB1
+ion binding	ADR1
+ion binding	AFT1
+ion binding	BDS1
+ion binding	BIR1
+ion binding	DOA4
+ion binding	ECM14
+ion binding	ECM22
+ion binding	FET4
+ion binding	FZF1
+ion binding	HIS4
+ion binding	HO
+ion binding	HSP104
+ion binding	ILV2
+ion binding	IRC20
+ion binding	ISU1
+ion binding	LRG1
+ion binding	MCM5
+ion binding	NAB2
+ion binding	OAF1
+ion binding	OPI1
+ion binding	PDR1
+ion binding	PHO23
+ion binding	PHO84
+ion binding	PIB1
+ion binding	PKC1
+ion binding	POL3
+ion binding	PRI1
+ion binding	QRI7
+ion binding	RAD16
+ion binding	RCO1
+ion binding	RPA135
+ion binding	RRP6
+ion binding	SET2
+ion binding	SFP1
+ion binding	SMC2
+ion binding	SNT2
+ion binding	SPO20
+ion binding	SSE1
+ion binding	STE5
+ion binding	STP3
+ion binding	UBP5
+ion binding	UBR2
+ion binding	UGA3
+ion binding	ULS1
+ion binding	UME6
+ion binding	VID22
+ion binding	VTC4
+ion binding	YHC1
+ion binding	ZRT1
+ion binding	ZRT3
+DNA binding	ADR1
+DNA binding	AFT1
+DNA binding	DOT6
+DNA binding	ECM22
+DNA binding	FZF1
+DNA binding	HHF2
+DNA binding	HIR2
+DNA binding	IOC4
+DNA binding	MCM5
+DNA binding	MOT1
+DNA binding	NPL3
+DNA binding	NSR1
+DNA binding	OAF1
+DNA binding	PRI1
+DNA binding	PRI2
+DNA binding	RAD16
+DNA binding	RAD17
+DNA binding	RED1
+DNA binding	SMC2
+DNA binding	SPO11
+DNA binding	SPT2
+DNA binding	STP3
+DNA binding	SUM1
+DNA binding	TAH11
+DNA binding	UGA3
+DNA binding	UME6
+DNA binding	VID22
+DNA binding	WAR1
+DNA binding	YAP6
+kinase activity	DBF20
+kinase activity	HSL1
+kinase activity	KIN1
+kinase activity	KIN82
+kinase activity	KSP1
+kinase activity	MCK1
+kinase activity	PBS2
+kinase activity	PFK26
+kinase activity	PKC1
+kinase activity	PKP1
+kinase activity	PTK2
+kinase activity	RBK1
+kinase activity	RCK2
+kinase activity	RIM11
+kinase activity	SAK1
+kinase activity	SSK2
+kinase activity	TOS3
+kinase activity	TRL1
+kinase activity	VTC4
+kinase activity	YCK1
+kinase activity	YEF1
+kinase activity	YKL126W
+transmembrane transporter activity	AGP1
+transmembrane transporter activity	FCY2
+transmembrane transporter activity	FET4
+transmembrane transporter activity	FLC2
+transmembrane transporter activity	HXT13
+transmembrane transporter activity	MDL2
+transmembrane transporter activity	MEX67
+transmembrane transporter activity	PDR10
+transmembrane transporter activity	PHO84
+transmembrane transporter activity	PMA1
+transmembrane transporter activity	RTC2
+transmembrane transporter activity	SMF1
+transmembrane transporter activity	TIM54
+transmembrane transporter activity	TRK2
+transmembrane transporter activity	UGA4
+transmembrane transporter activity	VBA1
+transmembrane transporter activity	VCX1
+transmembrane transporter activity	YCF1
+transmembrane transporter activity	YCT1
+transmembrane transporter activity	YOR1
+transmembrane transporter activity	ZRT1
+transmembrane transporter activity	ZRT3
+enzyme regulator activity	BLM10
+enzyme regulator activity	CLB3
+enzyme regulator activity	CLN3
+enzyme regulator activity	CYK3
+enzyme regulator activity	GCD2
+enzyme regulator activity	GPB1
+enzyme regulator activity	GPB2
+enzyme regulator activity	LRG1
+enzyme regulator activity	MCK1
+enzyme regulator activity	PCL5
+enzyme regulator activity	PHO81
+enzyme regulator activity	RHO1
+enzyme regulator activity	RPI1
+enzyme regulator activity	SHP1
+enzyme regulator activity	TFG1
+enzyme regulator activity	TPS3
+enzyme regulator activity	YCR059C
+enzyme regulator activity	YRA1
+mRNA binding	KSP1
+mRNA binding	MEX67
+mRNA binding	MSC6
+mRNA binding	MTR4
+mRNA binding	NAB2
+mRNA binding	NAM8
+mRNA binding	NPL3
+mRNA binding	NSR1
+mRNA binding	NUG1
+mRNA binding	PBP2
+mRNA binding	PHR1
+mRNA binding	PRP8
+mRNA binding	RRP5
+mRNA binding	URB1
+mRNA binding	VTC1
+mRNA binding	YHC1
+RNA binding	LOS1
+RNA binding	MEX67
+RNA binding	MTR4
+RNA binding	NAB2
+RNA binding	NPL3
+RNA binding	NSR1
+RNA binding	NUG1
+RNA binding	PRP8
+RNA binding	QRI7
+RNA binding	RRP5
+RNA binding	RSE1
+RNA binding	SET2
+RNA binding	SUB2
+RNA binding	UTP8
+RNA binding	YHC1
+RNA binding	YRA1
+protein-macromolecule adaptor activity	ABP140
+protein-macromolecule adaptor activity	ALY2
+protein-macromolecule adaptor activity	CIC1
+protein-macromolecule adaptor activity	COG1
+protein-macromolecule adaptor activity	COG3
+protein-macromolecule adaptor activity	GRR1
+protein-macromolecule adaptor activity	HRT3
+protein-macromolecule adaptor activity	INP2
+protein-macromolecule adaptor activity	PBS2
+protein-macromolecule adaptor activity	PEP12
+protein-macromolecule adaptor activity	SPO20
+protein-macromolecule adaptor activity	STE5
+protein-macromolecule adaptor activity	UGA3
+protein-macromolecule adaptor activity	YAP6
+oxidoreductase activity	ALD5
+oxidoreductase activity	DUS4
+oxidoreductase activity	ERG1
+oxidoreductase activity	ERG27
+oxidoreductase activity	FAS2
+oxidoreductase activity	FRE6
+oxidoreductase activity	HIS4
+oxidoreductase activity	IDH1
+oxidoreductase activity	IDP1
+oxidoreductase activity	KGD1
+oxidoreductase activity	MDH2
+oxidoreductase activity	MET10
+oxidoreductase activity	NAR1
+oxidoreductase activity	PDA1
+DNA-binding transcription factor activity	ADR1
+DNA-binding transcription factor activity	AFT1
+DNA-binding transcription factor activity	ECM22
+DNA-binding transcription factor activity	FZF1
+DNA-binding transcription factor activity	OAF1
+DNA-binding transcription factor activity	PDR1
+DNA-binding transcription factor activity	SFP1
+DNA-binding transcription factor activity	SUM1
+DNA-binding transcription factor activity	UGA3
+DNA-binding transcription factor activity	UME6
+DNA-binding transcription factor activity	WAR1
+DNA-binding transcription factor activity	YAP6
+lipid binding	ACB1
+lipid binding	ATG2
+lipid binding	IST2
+lipid binding	OPI1
+lipid binding	OSH2
+lipid binding	PIB1
+lipid binding	SPO20
+lipid binding	STE5
+lipid binding	TFB1
+lipid binding	VPS13
+lipid binding	VPS74
+ATP hydrolysis activity	ACT1
+ATP hydrolysis activity	DDR48
+ATP hydrolysis activity	HSP104
+ATP hydrolysis activity	IOC4
+ATP hydrolysis activity	MLH3
+ATP hydrolysis activity	MOT1
+ATP hydrolysis activity	REA1
+ATP hydrolysis activity	RPT5
+ATP hydrolysis activity	SMC2
+ATP hydrolysis activity	SSQ1
+nuclease activity	CCR4
+nuclease activity	HO
+nuclease activity	MKT1
+nuclease activity	MMS4
+nuclease activity	NUC1
+nuclease activity	POL3
+nuclease activity	RNY1
+nuclease activity	RRP6
+nuclease activity	SWT1
+cytoskeletal protein binding	ABP1
+cytoskeletal protein binding	ABP140
+cytoskeletal protein binding	KAR3
+cytoskeletal protein binding	MYO2
+cytoskeletal protein binding	NIP100
+cytoskeletal protein binding	SPC105
+cytoskeletal protein binding	SSK2
+cytoskeletal protein binding	VRP1
+cytoskeletal protein binding	YCR059C
+glycosyltransferase activity	BNA6
+glycosyltransferase activity	FKS3
+glycosyltransferase activity	GPH1
+glycosyltransferase activity	GSC2
+glycosyltransferase activity	KRE5
+glycosyltransferase activity	KTR3
+glycosyltransferase activity	MNN9
+glycosyltransferase activity	STT3
+glycosyltransferase activity	TPS3

@@ -1,0 +1,296 @@
+TERM	GENE
+response to chemical	ADR1
+response to chemical	BDS1
+response to chemical	CCW12
+response to chemical	CNE1
+response to chemical	FLC2
+response to chemical	FSF1
+response to chemical	FZF1
+response to chemical	GPB1
+response to chemical	GPB2
+response to chemical	GRR1
+response to chemical	HRT3
+response to chemical	HUL5
+response to chemical	KIN1
+response to chemical	KIN82
+response to chemical	MDL2
+response to chemical	MET30
+response to chemical	OAF1
+response to chemical	OPI1
+response to chemical	PBS2
+response to chemical	PDR1
+response to chemical	PDR10
+response to chemical	PPQ1
+response to chemical	RCK2
+response to chemical	SHP1
+response to chemical	SMY2
+response to chemical	SSK2
+response to chemical	STE5
+response to chemical	TRL1
+response to chemical	UBC1
+response to chemical	UBR2
+response to chemical	UGA3
+response to chemical	UME6
+response to chemical	USA1
+response to chemical	VPS74
+response to chemical	YCF1
+response to chemical	YCK1
+response to chemical	YKL126W
+mitotic cell cycle	ACT1
+mitotic cell cycle	AFT1
+mitotic cell cycle	APC2
+mitotic cell cycle	BIR1
+mitotic cell cycle	BNI1
+mitotic cell cycle	CCR4
+mitotic cell cycle	CDC25
+mitotic cell cycle	CLB3
+mitotic cell cycle	CLN3
+mitotic cell cycle	CSM3
+mitotic cell cycle	CYK3
+mitotic cell cycle	DBF20
+mitotic cell cycle	GRR1
+mitotic cell cycle	HSL1
+mitotic cell cycle	KAR3
+mitotic cell cycle	MCK1
+mitotic cell cycle	MET30
+mitotic cell cycle	MYO2
+mitotic cell cycle	NIP100
+mitotic cell cycle	PKC1
+mitotic cell cycle	PTK2
+mitotic cell cycle	RHO1
+mitotic cell cycle	SAP4
+mitotic cell cycle	SMC2
+mitotic cell cycle	SPC105
+mitotic cell cycle	TOM1
+mitotic cell cycle	TOP1
+mitotic cell cycle	TUS1
+mitotic cell cycle	VRP1
+mitotic cell cycle	ZDS2
+meiotic cell cycle	ACT1
+meiotic cell cycle	AFT1
+meiotic cell cycle	CLB3
+meiotic cell cycle	CSM3
+meiotic cell cycle	FKS3
+meiotic cell cycle	GAS4
+meiotic cell cycle	GPB2
+meiotic cell cycle	GSC2
+meiotic cell cycle	KAR3
+meiotic cell cycle	MCK1
+meiotic cell cycle	MLH3
+meiotic cell cycle	MMS4
+meiotic cell cycle	MSC6
+meiotic cell cycle	RAD17
+meiotic cell cycle	RCK2
+meiotic cell cycle	REC102
+meiotic cell cycle	RED1
+meiotic cell cycle	RIM11
+meiotic cell cycle	RIM21
+meiotic cell cycle	SET2
+meiotic cell cycle	SHP1
+meiotic cell cycle	SMC2
+meiotic cell cycle	SPO11
+meiotic cell cycle	SPO20
+meiotic cell cycle	SPO77
+meiotic cell cycle	SPS100
+meiotic cell cycle	TOP2
+meiotic cell cycle	VPS13
+DNA repair	ACT1
+DNA repair	CSM3
+DNA repair	DDR48
+DNA repair	FYV6
+DNA repair	IRC20
+DNA repair	MCK1
+DNA repair	MCM5
+DNA repair	MLH3
+DNA repair	MMS4
+DNA repair	PDR10
+DNA repair	PHR1
+DNA repair	POL3
+DNA repair	PRI2
+DNA repair	RAD16
+DNA repair	RAD17
+DNA repair	RAD26
+DNA repair	RSC1
+DNA repair	SET2
+DNA repair	SUB2
+DNA repair	TAH11
+DNA repair	TFB1
+DNA repair	ULS1
+DNA repair	YRA1
+cell wall organization or biogenesis	ACT1
+cell wall organization or biogenesis	CCW12
+cell wall organization or biogenesis	CWH41
+cell wall organization or biogenesis	FKS3
+cell wall organization or biogenesis	FLC2
+cell wall organization or biogenesis	GAS4
+cell wall organization or biogenesis	GSC2
+cell wall organization or biogenesis	KRE5
+cell wall organization or biogenesis	LRG1
+cell wall organization or biogenesis	MHP1
+cell wall organization or biogenesis	PKC1
+cell wall organization or biogenesis	RHO1
+cell wall organization or biogenesis	RIM21
+cell wall organization or biogenesis	RPI1
+cell wall organization or biogenesis	SBE2
+cell wall organization or biogenesis	SKN1
+cell wall organization or biogenesis	SPO77
+cell wall organization or biogenesis	SPS100
+cell wall organization or biogenesis	TCO89
+cell wall organization or biogenesis	TUS1
+cell wall organization or biogenesis	UTH1
+cell wall organization or biogenesis	YKL126W
+proteolysis involved in protein catabolism	APC2
+proteolysis involved in protein catabolism	BLM10
+proteolysis involved in protein catabolism	BSD2
+proteolysis involved in protein catabolism	CNE1
+proteolysis involved in protein catabolism	DOA4
+proteolysis involved in protein catabolism	FYV10
+proteolysis involved in protein catabolism	GPB1
+proteolysis involved in protein catabolism	GRR1
+proteolysis involved in protein catabolism	HRT3
+proteolysis involved in protein catabolism	HUL5
+proteolysis involved in protein catabolism	MDM30
+proteolysis involved in protein catabolism	MET30
+proteolysis involved in protein catabolism	RAD16
+proteolysis involved in protein catabolism	RPT5
+proteolysis involved in protein catabolism	SHP1
+proteolysis involved in protein catabolism	SMY2
+proteolysis involved in protein catabolism	SSE1
+proteolysis involved in protein catabolism	TOM1
+proteolysis involved in protein catabolism	UBC1
+proteolysis involved in protein catabolism	UBR2
+proteolysis involved in protein catabolism	UBX7
+proteolysis involved in protein catabolism	USA1
+regulation of cell cycle	APC2
+regulation of cell cycle	BIR1
+regulation of cell cycle	CCR4
+regulation of cell cycle	CDC25
+regulation of cell cycle	CLB3
+regulation of cell cycle	CLN3
+regulation of cell cycle	GRR1
+regulation of cell cycle	HSL1
+regulation of cell cycle	KAR3
+regulation of cell cycle	MCK1
+regulation of cell cycle	MMS4
+regulation of cell cycle	RAD17
+regulation of cell cycle	RCK2
+regulation of cell cycle	RED1
+regulation of cell cycle	RHO1
+regulation of cell cycle	SET2
+regulation of cell cycle	SMC2
+regulation of cell cycle	SPC105
+regulation of cell cycle	SPO77
+regulation of cell cycle	TUS1
+regulation of cell cycle	VRP1
+regulation of cell cycle	ZDS2
+organelle fission	AFT1
+organelle fission	APC2
+organelle fission	BIR1
+organelle fission	CLB3
+organelle fission	CSM3
+organelle fission	DBF20
+organelle fission	MCK1
+organelle fission	MLH3
+organelle fission	MMS4
+organelle fission	MSC6
+organelle fission	RAD17
+organelle fission	RCK2
+organelle fission	REC102
+organelle fission	RED1
+organelle fission	SET2
+organelle fission	SMC2
+organelle fission	SPC105
+organelle fission	SPO11
+organelle fission	TOP1
+organelle fission	TOP2
+DNA recombination	EBS1
+DNA recombination	HO
+DNA recombination	IES3
+DNA recombination	IRC20
+DNA recombination	IRC8
+DNA recombination	MCM5
+DNA recombination	MLH3
+DNA recombination	MMS4
+DNA recombination	MSC6
+DNA recombination	NSR1
+DNA recombination	NUC1
+DNA recombination	PDR10
+DNA recombination	RAD17
+DNA recombination	REC102
+DNA recombination	SET2
+DNA recombination	TAH11
+DNA recombination	TOP1
+DNA recombination	TOP2
+carbohydrate metabolism	CWH41
+carbohydrate metabolism	FYV10
+carbohydrate metabolism	GPH1
+carbohydrate metabolism	GSC2
+carbohydrate metabolism	KRE5
+carbohydrate metabolism	LRG1
+carbohydrate metabolism	MDH2
+carbohydrate metabolism	MLS1
+carbohydrate metabolism	PIB1
+carbohydrate metabolism	RBK1
+carbohydrate metabolism	RHO1
+carbohydrate metabolism	SAK1
+carbohydrate metabolism	SHP1
+carbohydrate metabolism	SKN1
+carbohydrate metabolism	SUC2
+carbohydrate metabolism	TCO89
+regulation of DNA metabolism	CSM3
+regulation of DNA metabolism	DOA4
+regulation of DNA metabolism	IPI3
+regulation of DNA metabolism	MCM5
+regulation of DNA metabolism	MMS4
+regulation of DNA metabolism	RCO1
+regulation of DNA metabolism	RRP6
+regulation of DNA metabolism	SAK1
+regulation of DNA metabolism	SET2
+regulation of DNA metabolism	SUM1
+regulation of DNA metabolism	TAH11
+regulation of DNA metabolism	TOP1
+regulation of DNA metabolism	TOP2
+regulation of DNA metabolism	ULS1
+nucleobase-containing compound transport	BUL1
+nucleobase-containing compound transport	DOA4
+nucleobase-containing compound transport	FCY2
+nucleobase-containing compound transport	FLC2
+nucleobase-containing compound transport	LOS1
+nucleobase-containing compound transport	MDM30
+nucleobase-containing compound transport	MEX67
+nucleobase-containing compound transport	NAB2
+nucleobase-containing compound transport	RPS15
+nucleobase-containing compound transport	RPS2
+nucleobase-containing compound transport	SNF7
+nucleobase-containing compound transport	SUB2
+nucleobase-containing compound transport	UTP8
+nucleobase-containing compound transport	YRA1
+vacuole organization	ACT1
+vacuole organization	ATG11
+vacuole organization	ATG2
+vacuole organization	CLN3
+vacuole organization	MYO2
+vacuole organization	PEP12
+vacuole organization	RHO1
+vacuole organization	RIM21
+vacuole organization	SHP1
+vacuole organization	VTC1
+vacuole organization	VTC3
+vacuole organization	VTC4
+vacuole organization	YCF1
+cytokinesis	ACT1
+cytokinesis	APC2
+cytokinesis	BNI1
+cytokinesis	BNI4
+cytokinesis	CYK3
+cytokinesis	DBF20
+cytokinesis	MYO2
+cytokinesis	PKC1
+cytokinesis	RHO1
+cytokinesis	TUS1
+cytokinesis	VRP1
+cell morphogenesis	FIG2
+cell morphogenesis	HBT1
+cell morphogenesis	RNY1
+cell morphogenesis	TAO3
+cell morphogenesis	YCK1

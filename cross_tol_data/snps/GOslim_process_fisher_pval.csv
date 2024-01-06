@@ -1,73 +1,87 @@
-GOID,TERM,NUM_LIST_ANNOTATIONS,LIST_SIZE,CLUSTER_FREQUENCY,TOTAL_NUM_ANNOTATIONS,POPULATION_SIZE,GENOME_FREQUENCY,ANNOTATED_GENES,pval
-GO:0042221,response to chemical,8,47,17.02%,454,6485,7.00%,"GPB1, HUL5, PDR1, SHP1, SNT2, SSK2, STE5, YKL126W",0.026778604949112536
-GO:0006811,ion transport,6,47,12.77%,215,6485,3.32%,"BSD2, FZF1, PHO84, PMA1, PTK2, VCX1",0.007294276493868188
-GO:0055085,transmembrane transport,4,47,8.51%,271,6485,4.18%,"FCY2, PHO84, PMA1, VCX1",0.1495816847214233
-GO:0006364,rRNA processing,4,47,8.51%,328,6485,5.06%,"NSR1, RRP46, RRP6, UTP8",0.3110153130197253
-GO:0033043,regulation of organelle organization,4,47,8.51%,237,6485,3.65%,"ABP1, RRP6, SET2, SSK2",0.10681216980538577
-GO:0051603,proteolysis involved in protein catabolic process,4,47,8.51%,224,6485,3.45%,"BSD2, GPB1, HUL5, SHP1",0.09210604529313765
-GO:0006366,transcription by RNA polymerase II,4,47,8.51%,486,6485,7.49%,"FZF1, PDR1, SNT2, TFG1",0.7796618841983635
-GO:0006873,cellular ion homeostasis,3,47,6.38%,131,6485,2.02%,"ISU1, PTK2, VCX1",0.07865743219566494
-GO:0031399,regulation of protein modification process,3,47,6.38%,118,6485,1.82%,"SET2, STE5, TFG1",0.06204157105382026
-GO:0000278,mitotic cell cycle,3,47,6.38%,333,6485,5.13%,"CDC25, PTK2, SMC2",0.7353381825022601
-GO:0070647,protein modification by small protein conjugation or removal,3,47,6.38%,164,6485,2.53%,"GPB1, HUL5, SNT2",0.127933040456239
-GO:0015931,nucleobase-containing compound transport,3,47,6.38%,139,6485,2.14%,"FCY2, LOS1, UTP8",0.08972410664996898
-GO:0051321,meiotic cell cycle,3,47,6.38%,291,6485,4.49%,"SET2, SHP1, SMC2",0.4755577341402716
-GO:0051052,regulation of DNA metabolic process,3,47,6.38%,119,6485,1.84%,"RRP6, SAK1, SET2",0.06325659823830554
-GO:0005975,carbohydrate metabolic process,3,47,6.38%,148,6485,2.28%,"KRE5, SAK1, SHP1",0.10288020552272807
-GO:0051726,regulation of cell cycle,3,47,6.38%,255,6485,3.93%,"CDC25, SET2, SMC2",0.43865681725681793
-GO:0006629,lipid metabolic process,3,47,6.38%,297,6485,4.58%,"ACC1, ROG1, YKL126W",0.48242663145042847
-GO:0006417,regulation of translation,3,47,6.38%,206,6485,3.18%,"GCD2, RRP46, RRP6",0.20154987934261911
-GO:0001403,invasive growth in response to glucose limitation,3,47,6.38%,54,6485,0.83%,"FIG2, GPB1, STE5",0.009023878618200162
-GO:0000902,cell morphogenesis,2,47,4.26%,27,6485,0.42%,"FIG2, HBT1",0.01951189583851424
-GO:0051049,regulation of transport,2,47,4.26%,96,6485,1.48%,"FZF1, YKL126W",0.16317368119169087
-GO:0048285,organelle fission,2,47,4.26%,243,6485,3.75%,"SET2, SMC2",0.6972358069307198
-GO:0007010,cytoskeleton organization,2,47,4.26%,254,6485,3.92%,"ABP1, SSK2",0.707892552689172
-GO:0016570,histone modification,2,47,4.26%,110,6485,1.70%,"SET2, SNT2",0.19977852385501624
-GO:0006325,chromatin organization,2,47,4.26%,251,6485,3.87%,"SET2, SMC2",0.7049716753176303
-GO:0070925,organelle assembly,2,47,4.26%,112,6485,1.73%,"PMA1, SHP1",0.20508155658380872
-GO:0006468,protein phosphorylation,2,47,4.26%,126,6485,1.94%,"PTK2, STE5",0.24249280280549046
-GO:0018193,peptidyl-amino acid modification,2,47,4.26%,148,6485,2.28%,"RKM3, SET2",0.30146777579359996
-GO:0007124,pseudohyphal growth,2,47,4.26%,76,6485,1.17%,"GPB1, SAK1",0.11343409505439463
-GO:0006091,generation of precursor metabolites and energy,2,47,4.26%,80,6485,1.23%,"SAK1, SHP1",0.1230554790196346
-GO:0006605,protein targeting,2,47,4.26%,242,6485,3.73%,"BSD2, COG1",0.696275548733866
-GO:0071554,cell wall organization or biogenesis,2,47,4.26%,197,6485,3.04%,"KRE5, YKL126W",0.6562474953415728
-GO:0043934,sporulation,2,47,4.26%,131,6485,2.02%,"SET2, SHP1",0.2559178315212645
-GO:0006260,DNA replication,2,47,4.26%,139,6485,2.14%,"SAK1, SET2",0.27739309268737367
-GO:0043144,sno(s)RNA processing,2,47,4.26%,45,6485,0.69%,"RRP46, RRP6",0.047501136871572626
-GO:0008213,protein alkylation,2,47,4.26%,52,6485,0.80%,"RKM3, SET2",0.06074927202300708
-GO:0006354,"DNA-templated transcription, elongation",2,47,4.26%,105,6485,1.62%,"SET2, TFG1",0.1865902046871497
-GO:0006310,DNA recombination,2,47,4.26%,190,6485,2.93%,"NSR1, SET2",0.6509273678538893
-GO:0009451,RNA modification,2,47,4.26%,177,6485,2.73%,"DUS4, ISU1",0.37746842474645803
-GO:0008033,tRNA processing,2,47,4.26%,118,6485,1.82%,"DUS4, ISU1",0.22106473062113177
-GO:0006401,RNA catabolic process,2,47,4.26%,152,6485,2.34%,"RRP46, RRP6",0.3121159360769162
-GO:0007059,chromosome segregation,2,47,4.26%,194,6485,2.99%,"SHP1, SMC2",0.653925465252377
-GO:0007033,vacuole organization,2,47,4.26%,101,6485,1.56%,"SHP1, VTC1",0.17612489382320176
-GO:0042274,ribosomal small subunit biogenesis,2,47,4.26%,137,6485,2.11%,"NSR1, UTP8",0.2720280171782052
-GO:0032200,telomere organization,1,47,2.13%,134,6485,2.07%,RRP6,0.6267252159804161
-GO:0051604,protein maturation,1,47,2.13%,86,6485,1.33%,RCE1,0.4713215368320172
-GO:0006397,mRNA processing,1,47,2.13%,180,6485,2.78%,YHC1,1
-GO:0006486,protein glycosylation,1,47,2.13%,64,6485,0.99%,KTR3,0.3793558264863432
-GO:0006979,response to oxidative stress,1,47,2.13%,106,6485,1.63%,SNT2,0.5428341467632816
-GO:0006997,nucleus organization,1,47,2.13%,97,6485,1.50%,SMC2,0.5119625349640002
-GO:0032787,monocarboxylic acid metabolic process,1,47,2.13%,127,6485,1.96%,ACC1,0.6073504556404751
-GO:0006470,protein dephosphorylation,1,47,2.13%,28,6485,0.43%,TFG1,0.19216710659029013
-GO:0006360,transcription by RNA polymerase I,1,47,2.13%,70,6485,1.08%,UTP8,0.4059488420741587
-GO:0006353,"DNA-templated transcription, termination",1,47,2.13%,41,6485,0.63%,SET2,0.2656393621872058
-GO:0048284,organelle fusion,1,47,2.13%,99,6485,1.53%,VTC1,0.5190019735119881
-GO:0000910,cytokinesis,1,47,2.13%,96,6485,1.48%,BNI4,0.5084034650275484
-GO:0006281,DNA repair,1,47,2.13%,265,6485,4.09%,SET2,1
-GO:0008380,RNA splicing,1,47,2.13%,140,6485,2.16%,YHC1,1
-GO:0032196,transposition,1,47,2.13%,112,6485,1.73%,STE5,0.5623009134263456
-GO:0055086,nucleobase-containing small molecule metabolic process,1,47,2.13%,163,6485,2.51%,YEF1,1
-GO:0042255,ribosome assembly,1,47,2.13%,64,6485,0.99%,NSR1,0.3793558264863432
-GO:0006413,translational initiation,1,47,2.13%,61,6485,0.94%,GCD2,0.36560666510829
-GO:0006869,lipid transport,1,47,2.13%,71,6485,1.09%,YKL126W,0.41026659731044585
-GO:0048193,Golgi vesicle transport,1,47,2.13%,192,6485,2.96%,COG1,1
-GO:0043543,protein acylation,1,47,2.13%,70,6485,1.08%,SET2,0.4059488420741587
-GO:0006352,"DNA-templated transcription, initiation",1,47,2.13%,75,6485,1.16%,TFG1,0.42721971540925113
-GO:0006970,response to osmotic stress,1,47,2.13%,68,6485,1.05%,SSK2,0.3972162569910168
-GO:0045333,cellular respiration,1,47,2.13%,89,6485,1.37%,COX1,0.48273659786925455
-GO:0006796,phosphate metabolism,1,47,2.13%,5,6485,0.08%,PHO81,0.043265775601162966
-GO:0007165,signal transduction,1,47,2.13%,19,6485,0.29%,SYG1,0.13694246919782174
-GO:0016236,macroautophagy,1,47,2.13%,71,6485,1.09%,NFT1,0.41026659731044585
-NA,unknown,1,47,2.13%,1715,6485,26.45%,OCA4,2.6620667582743726e-4
+TERM,CLUSTER_FREQUENCY,GENOME_FREQUENCY,pval
+transcription by RNA polymerase II,11.60%,7.54%,0.020186464859261566
+response to chemical,11.60%,6.32%,0.0014468555095303222
+mitotic cell cycle,9.40%,4.56%,8.385793307040107e-4
+meiotic cell cycle,8.78%,4.29%,0.001520779504235666
+DNA repair,7.21%,4.12%,0.016657862027729252
+cell wall organization or biogenesis,6.90%,3.02%,0.0010522376912821627
+lipid metabolism,6.90%,4.64%,0.08298039179993558
+proteolysis involved in protein catabolism,6.90%,3.36%,0.0033303410846671397
+regulation of cell cycle,6.90%,3.81%,0.013120195767079425
+chromatin organization,6.58%,3.84%,0.02813335086405024
+organelle fission,6.27%,3.42%,0.020116308699638825
+regulation of organelle organization,6.27%,3.62%,0.03468058273409545
+cytoskeleton organization,5.96%,3.90%,0.08251515689360142
+DNA recombination,5.64%,2.96%,0.019815240001056344
+rRNA processing,5.33%,5.10%,0.7957083169477766
+carbohydrate metabolism,5.02%,2.17%,0.0038972528707021245
+transmembrane transport,5.02%,4.16%,0.47523970196737336
+sporulation,4.70%,2.02%,0.004932811294301528
+DNA replication,4.70%,2.13%,0.0069757662657381776
+RNA catabolism,4.39%,2.45%,0.04584449042149489
+regulation of DNA metabolism,4.39%,1.68%,0.002213156875270129
+nucleobase-containing compound transport,4.39%,2.14%,0.019032898302938035
+mRNA processing,4.08%,2.68%,0.16006719422691668
+vacuole organization,4.08%,1.59%,0.0035440347045479817
+regulation of translation,4.08%,2.98%,0.3140302187465314
+mitochondrion organization,4.08%,4.36%,0.9999999999999999
+monocarboxylic acid metabolism,3.76%,1.97%,0.04268659492110768
+RNA splicing,3.76%,2.16%,0.07930848898292857
+chromosome segregation,3.76%,2.47%,0.19871225600078127
+protein targeting,3.76%,3.68%,0.8792951657420411
+protein modification by small protein conjugation or removal,3.76%,2.19%,0.08245146973868082
+DNA-templated transcription elongation,3.45%,1.60%,0.024263806776179647
+cytokinesis,3.45%,1.45%,0.016831787343040586
+Golgi vesicle transport,3.45%,2.99%,0.614578054556701
+endocytosis,3.13%,1.59%,0.06811512574815096
+monoatomic ion transport,3.13%,1.46%,0.03303516356790927
+amino acid metabolism,2.82%,2.44%,0.5813880913952469
+ribosomal large subunit biogenesis,2.82%,1.87%,0.21179496025002803
+intracellular monoatomic ion homeostasis,2.82%,1.97%,0.30450644924548387
+telomere organization,2.51%,2.07%,0.5468411970505266
+regulation of transport,2.51%,1.33%,0.086690700899724707
+organelle fusion,2.51%,1.53%,0.1675727674665555
+lipid transport,2.19%,1.09%,0.09746664696787738
+organelle assembly,2.19%,1.74%,0.5118114663599824
+nucleus organization,2.19%,1.51%,0.3467030258021169
+pseudohyphal growth,1.88%,1.13%,0.27488734485307414
+organelle inheritance,1.88%,0.85%,0.06734150091991219
+amino acid transport,1.88%,0.69%,0.03237968494838745
+nucleobase-containing small molecule metabolism,1.88%,2.41%,0.7064569665700822
+tRNA processing,1.88%,1.82%,0.8306843529434608
+protein folding,1.88%,1.51%,0.6361552880194972
+invasive growth in response to glucose limitation,1.88%,0.79%,0.05148046599522967
+protein phosphorylation,1.57%,0.74%,0.10364948516564916
+exocytosis,1.57%,0.68%,0.08008951436202214
+cell morphogenesis,1.57%,0.29%,0.004698402449046739
+response to osmotic stress,1.57%,0.96%,0.2463715354977711
+protein maturation,1.57%,1.26%,0.6055473767231553
+transcription by RNA polymerase I,1.57%,1.08%,0.40277529813658003
+regulation of protein modification process,1.57%,0.94%,0.23994157807068808
+RNA modification,1.25%,2.76%,0.14967602485214282
+peroxisome organization,1.25%,0.85%,0.3587713925774157
+oligosaccharide metabolism,1.25%,0.66%,0.2818663908062716
+ribosomal small subunit biogenesis,1.25%,2.10%,0.41654764559267476
+ribosomal subunit export from nucleus,1.25%,0.80%,0.3359938276430808
+mitochondrial translation,1.25%,2.62%,0.19648182940813863
+cell budding,1.25%,0.79%,0.32882865155238716
+ribosome assembly,1.25%,1.02%,0.570852558617754
+cytoplasmic translation,1.25%,2.62%,0.19648182940813863
+protein glycosylation,1.25%,0.99%,0.5612299349672242
+DNA-templated transcription initiation,1.25%,1.08%,0.778325300422918
+response to oxidative stress,0.94%,1.31%,0.7991119282268511
+sno(s)RNA processing,0.94%,0.59%,0.4412388136585759
+DNA damage response,0.94%,1.14%,1
+translational elongation,0.94%,5.15%,2.1941191612762553e-4
+generation of precursor metabolites and energy,0.94%,1.22%,1
+vesicle organization,0.94%,1.31%,0.7991119282268511
+cellular respiration,0.63%,1.31%,0.4401740112092965
+DNA-templated transcription termination,0.63%,0.65%,1
+translational initiation,0.63%,1.06%,0.7737213822102601
+transcription by RNA polymerase III,0.63%,0.71%,1
+peptidyl-amino acid modification,0.31%,0.97%,0.3701200747041552
+protein alkylation,0.31%,0.31%,1
+response to heat,0.31%,0.65%,0.7219689324510755
+endosomal transport,0.31%,1.33%,0.19085345567051457
+carbohydrate transport,0.31%,0.56%,1
+response to starvation,0.31%,0.71%,0.7251296337717807

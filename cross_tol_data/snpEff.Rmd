@@ -1,0 +1,436 @@
+---
+title: "snpEff"
+output: html_document
+date: "2023-09-28"
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(dunn.test)
+library(ggbeeswarm)
+```
+```{r}
+mutations <- read.csv("cross_tol_data/snps/mutations_pk.csv") 
+```
+
+#preparing mutations_pk for comparison with snpEff results:
+```{r}
+regions_file <- mutations %>%
+  select(chr, POS) %>%
+  mutate(
+    CHROM = case_when(
+      chr == "chr1" ~ "ref|NC_001133|", 
+      chr == "chr2" ~ "ref|NC_001134|",
+      chr == "chr3" ~ "ref|NC_001135|",
+      chr == "chr4" ~ "ref|NC_001136|",
+      chr == "chr5" ~ "ref|NC_001137|",
+      chr == "chr6" ~ "ref|NC_001138|",
+      chr == "chr7" ~ "ref|NC_001139|",
+      chr == "chr8" ~ "ref|NC_001140|",
+      chr == "chr9" ~ "ref|NC_001141|",
+      chr == "chr10" ~ "ref|NC_001142|",
+      chr == "chr11" ~ "ref|NC_001143|",
+      chr == "chr12" ~ "ref|NC_001144|",
+      chr == "chr13" ~ "ref|NC_001145|",
+      chr == "chr14" ~ "ref|NC_001146|",
+      chr == "chr15" ~ "ref|NC_001147|",
+      chr == "chr16" ~ "ref|NC_001148|",
+      chr == "chrmt" ~ "ref|NC_001224|"
+    )
+  ) %>%
+  select(CHROM, POS) %>%
+  arrange(CHROM, POS) %>% 
+  distinct() %>% 
+  write_tsv("regions_file.tsv")
+```
+
+```{r}
+verified_snps <- read_tsv("regions_file_verified_ext.tsv") %>% 
+  mutate(
+    CHROM = case_when(
+      CHROM1 == "ref|NC_001133|" ~ "chrI", 
+      CHROM1 == "ref|NC_001134|" ~ "chrII",
+      CHROM1 == "ref|NC_001135|" ~ "chrIII",
+      CHROM1 == "ref|NC_001136|" ~ "chrIV",
+      CHROM1 == "ref|NC_001137|" ~ "chrV",
+      CHROM1 == "ref|NC_001138|" ~ "chrVI",
+      CHROM1 == "ref|NC_001139|" ~ "chrVII",
+      CHROM1 == "ref|NC_001140|" ~ "chrVIII",
+      CHROM1 == "ref|NC_001141|" ~ "chrIX",
+      CHROM1 == "ref|NC_001142|" ~ "chrX",
+      CHROM1 == "ref|NC_001143|" ~ "chrXI",
+      CHROM1 == "ref|NC_001144|" ~ "chrXII",
+      CHROM1 == "ref|NC_001145|" ~ "chrXIII",
+      CHROM1 == "ref|NC_001146|" ~ "chrXIV",
+      CHROM1 == "ref|NC_001147|" ~ "chrXV",
+      CHROM1 == "ref|NC_001148|" ~ "chrXVI",
+      CHROM1 == "ref|NC_001224|" ~ "chrM"
+    )
+  ) %>%
+  select(-c(CHROM1,verified)) %>% 
+  select(CHROM, everything())
+  
+snpEff_vcf <- read_tsv("snpEff_results.tsv") %>% 
+  select(-c(ID, FILTER, FORMAT, CdBM23_S1:ZnBM47_S95))
+
+snpEff <- left_join(verified_snps, snpEff_vcf, by=c("CHROM","POS")) %>% 
+  arrange(CHROM, POS)
+
+snpEff[,"INFO"] %>% write_tsv("snp_INFO.txt")
+snpEff <- snpEff %>% select(-INFO)
+```
+```{r}
+mutations$evo_line <- gsub("_.*", "", mutations$evo_line)
+line_E1 <- mutations %>% select(evo_line, metal)
+
+snpEff_info <- read_tsv("snp_INFO_reduced.tsv")
+snpsFinal <- cbind(snpEff, snpEff_info) %>% left_join(line_E1) %>% distinct() %>% 
+  relocate(c(evo_line,GENE), .before = CHROM) %>% 
+  relocate(c(variant, effect), .after = ALT) %>% 
+  write_tsv("snpsFINAL_fixed.tsv")
+
+unique(snpsFinal$GENE)
+```
+
+```{r}
+snpsFinal %>% 
+  drop_na() %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=variant, fill=metal)) +
+  geom_bar() +
+  coord_flip() +
+  scale_x_discrete(limits=c("missense_variant", "frameshift_variant", "synonymous_variant", "stop_gained", "conservative_inframe_deletion", "frameshift_variant&stop_lost&splice_region_variant", "frameshift_variant&start_lost"))
+
+snpsFinal %>% 
+  drop_na() %>% 
+  filter(evo_line=="MnBM42" | evo_line=="MnBM14" | evo_line=="MnBM32" | evo_line=="CdBM30") %>% 
+  ggplot(aes(x=evo_line, fill=variant)) +
+  geom_bar() +
+  coord_flip()
+
+snpsFinal %>% 
+  drop_na() %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=metal, fill=variant)) +
+  geom_bar() +
+  coord_flip() +
+  scale_x_discrete(limits=c("Co","Mn","Cd","Zn","Cu","Ni"))
+
+snpsFinal %>% 
+  drop_na() %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=metal, fill=effect)) +
+  geom_bar() +
+  coord_flip() +
+  scale_x_discrete(limits=c("Co","Mn","Cd","Zn","Cu","Ni"))
+
+snpsFinal %>% 
+  drop_na() %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=effect, fill=effect)) +
+  geom_bar() +
+  coord_flip()+
+  scale_x_discrete(limits=c("HIGH", "MODERATE", "LOW"))
+
+snpsFinal %>% 
+  drop_na() %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  group_by(effect) %>% 
+  summarize(total=n())
+```
+```{r}
+snpsFINAL_Cd <- snpsFinal %>% filter(metal=="Cd") 
+snpsFINAL_Co <- snpsFinal %>% filter(metal=="Co")
+snpsFINAL_Cu <- snpsFinal %>% filter(metal=="Cu")
+snpsFINAL_Mn <- snpsFinal %>% filter(metal=="Mn") %>% filter(evo_line!="MnBM42"&evo_line!="MnBM14")
+snpsFINAL_Ni <- snpsFinal %>% filter(metal=="Ni")
+snpsFINAL_Zn <- snpsFinal %>% filter(metal=="Zn")
+```
+```{r}
+unique(snpsFINAL_Zn$GENE)
+```
+```{r}
+snpsFinal[] <- lapply(snpsFinal, function(x) gsub("TRL 1", "TRL1", x))
+
+process_long <- read_tsv("cross_tol_data/process_slim_long_top15.tsv")
+process_long[] <- lapply(process_long, function(x) gsub("YKL126W", "YPK1", x))
+function_long <- read_tsv("cross_tol_data/snps/function_slim_long_final.tsv")
+function_long[] <- lapply(function_long, function(x) gsub("YKL126W", "YPK1", x))
+function_long[] <- lapply(function_long, function(x) gsub("TRL 1", "TRL1", x))
+component_long <- read_tsv("cross_tol_data/snps/component_slim_long_final.tsv")
+component_long[] <- lapply(component_long, function(x) gsub("YKL126W", "YPK1", x))
+
+snps_effect <- snpsFinal %>% 
+  left_join(process_long, by="GENE") %>% 
+  left_join(function_long, by="GENE") %>% 
+  left_join(component_long, by="GENE") %>% 
+  rename("TERM_process" = TERM.x,
+         "TERM_function" = TERM.y,
+         "TERM_component" = TERM) %>% 
+  filter(CHROM!="chrM")
+snps_effect[] <- lapply(snps_effect, function(x) gsub("YKL126W", "YPK1", x))
+snps_effect[] <- lapply(snps_effect, function(x) gsub("TRL 1", "TRL1", x))
+snps_effect[] <- lapply(snps_effect, function(x) gsub("BSD 2.00", "BSD2", x))
+```
+
+```{r}
+#currently this data is filtring out MnBM42 and MnBM14, but we can comment out these lines to include them if wanted
+
+snps_summary <- snpsFinal %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="overall", category="overall")
+
+kinase_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_function=="kinase activity") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+kinase_summary <- kinase_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="kinase activity", category="molecular function")
+
+bud_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_component=="cellular bud") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+bud_summary <- bud_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="cellular bud", category="cellular component")
+
+pole_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_component=="site of polarized growth") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+pole_summary <- pole_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="site of polarized growth", category="cellular component")
+
+vacuole_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_component=="vacuole") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+vacuole_summary <- vacuole_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="vacuole", category="cellular component")
+
+chem_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_process=="response to chemical") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+chem_summary <- chem_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="response to chemical", category="biological process")
+
+mitotic_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_process=="mitotic cell cycle") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+mitotic_summary <- mitotic_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="mitotic cell cycle", category="biological process")
+
+meiotic_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_process=="meiotic cell cycle") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+meiotic_summary <- meiotic_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="meiotic cell cycle", category="biological process")
+
+proteolysis_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_process=="proteolysis involved in protein catabolism") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+proteolysis_summary <- proteolysis_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="proteolysis involved in protein catabolism", category="biological process")
+
+cellwall_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(TERM_process=="cell wall organization or biogenesis") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+cellwall_summary <- cellwall_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count)) %>% 
+  mutate(term="cell wall organization or biogenesis", category="biological process")
+```
+
+```{r}
+effect_term_compare <- rbind(snps_summary, kinase_summary, bud_summary, pole_summary, vacuole_summary, chem_summary, mitotic_summary, meiotic_summary, proteolysis_summary, cellwall_summary)
+effect_term_compare$effect <- factor(effect_term_compare$effect, levels=c("HIGH", "MODERATE", "LOW", "MODIFIER"))
+effect_term_compare$term <- factor(effect_term_compare$term, levels=c("cell wall organization or biogenesis", "proteolysis involved in protein catabolism", "meiotic cell cycle", "mitotic cell cycle", "response to chemical", "cellular bud", "site of polarized growth", "vacuole", "kinase activity", "overall"))
+
+effect_term_compare %>% 
+  ggplot(aes(x=term, y=prop, fill=effect, width = ifelse(term == "overall", 1, 0.5))) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(limits=c("MODIFIER", "LOW", "MODERATE", "HIGH"), labels = c("modifier", "silent", "missense", "nonsense/frameshift"), values=c("#ffd21f", "#5cd65c", "#33adff", "#ff6666"))+
+  coord_flip() +
+  labs(x="GO Term", y="Proportion") +
+  theme_bw()
+ggsave("GO_effect2.png", width=7, height=5, units = "in", dpi=700)
+
+effect_term_compare %>% 
+  ggplot(aes(x=effect, y=prop, fill=term)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  scale_fill_manual(limits = c("overall", "kinase activity", "vacuole", "site of polarized growth", "cellular bud", "response to chemical", "mitotic cell cycle", "meiotic cell cycle", "proteolysis involved in protein catabolism", "cell wall organization or biogenesis"), values = c("black", "#abc900", "#ffbeb4", "#ff8a7c", "#f84c42", "#afdaff", "#86a4f1", "#5d6de3", "#3437d5", "#0a00c7"), name = "GO Term") +
+  coord_flip() +
+  labs(title="Effects of significantly targeted GO terms", x="Mutation Effect", y="Proportion") +
+  theme_bw()
+ggsave("GO_effect.png", width=10, height=7, units = "in", dpi=700)
+```
+
+"black", "#ffd400", "#f985ff", "#bd55ff", "#8d1dff", "#a4ff80", "#6ed0b3", "#00bbec", "#2373ec", "#1200ff"
+
+#Goodness of Fit test for the above info
+```{r}
+#the expected values are the proportions of effect from the overall set of snps. I will use the order HIGH, LOW, MODERATE, MODIFIER
+
+expected <- c(0.26621160, 0.14675768, 0.55972696, 0.02730375)
+observed_kinase <- c(11, 5, 13, 0)
+observed_bud <- c(4, 4, 13, 1)
+observed_pole <- c(5, 4, 14, 1)
+observed_vacuole <- c(24, 2, 22, 1)
+observed_chem <- c(7, 3, 19, 0)
+observed_mitotic <- c(15, 6, 18, 1)
+observed_meiotic <- c(3, 4, 11, 1)
+observed_proteolysis <- c(3, 4, 12, 0)
+observed_cellwall <- c(4, 4, 5, 1)
+
+chisq.test(x=observed_kinase, p=expected)
+chisq.test(x=observed_bud, p=expected)
+chisq.test(x=observed_pole, p=expected)
+chisq.test(x=observed_vacuole, p=expected)
+chisq.test(x=observed_chem, p=expected)
+chisq.test(x=observed_mitotic, p=expected)
+chisq.test(x=observed_meiotic, p=expected)
+chisq.test(x=observed_proteolysis, p=expected)
+chisq.test(x=observed_cellwall, p=expected)
+```
+```{r}
+strong_selection_genes <- snps_effect %>% 
+  filter(GENE=="BSD2" |
+           GENE=="CDC25" |
+           GENE=="HUL5" | 
+           GENE=="MAM3" |
+           GENE=="PHO84" | 
+           GENE=="PMA1" |
+           GENE=="PTK2" | 
+           GENE=="RSE1" |
+           GENE=="SFP1" | 
+           GENE=="SIW14" |
+           GENE=="TFG1" | 
+           GENE=="VCX1" |
+           GENE=="VTC4"
+           ) %>% 
+  replace_na(list(TERM_component = 'unknown')) %>% 
+  replace_na(list(TERM_process = 'unknown')) %>% 
+  replace_na(list(TERM_function = 'unknown'))
+
+strong_selection_genes$TERM_component <- gsub("spliceosomal complex", "nucleus", strong_selection_genes$TERM_component)
+strong_selection_genes$TERM_component <- gsub("RNA polymerase II transcription regulator complex", "nucleus", strong_selection_genes$TERM_component)
+```
+```{r}
+strong_selection_genes %>% 
+  select(GENE, TERM_component) %>% 
+  filter(!duplicated(.[c("GENE", "TERM_component")])) %>% 
+  ggplot(aes(x = reorder(factor(TERM_component), TERM_component, length))) +
+  geom_bar(stat='count') +
+  coord_flip() + 
+  labs(x="Cellular Component") +
+  theme_bw()
+
+strong_selection_genes %>% 
+  select(GENE, TERM_process) %>% 
+  filter(!duplicated(.[c("GENE", "TERM_process")])) %>% 
+  ggplot(aes(x = reorder(factor(TERM_process), TERM_process, length))) +
+  geom_bar(stat='count') +
+  coord_flip() + 
+  labs(x="Biological Process") +
+  theme_bw()
+
+strong_selection_genes %>% 
+  select(GENE, TERM_function) %>% 
+  filter(!duplicated(.[c("GENE", "TERM_function")])) %>% 
+  ggplot(aes(x = reorder(factor(TERM_function), TERM_function, length))) +
+  geom_bar(stat='count') +
+  coord_flip() + 
+  labs(x="Molecular Function") +
+  theme_bw()
+```
+
+```{r}
+strong_sel_reduced <- strong_selection_genes %>%
+  select(-c(TERM_process,TERM_component, TERM_function)) %>%
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")])) %>% 
+  write_csv("strong_sel_reduced.csv")
+```
+
+
+number of mutations by line
+```{r}
+snps_count <- snpsFinal %>% 
+  group_by(evo_line) %>% 
+  summarize(count=n()) %>% 
+  mutate(metal = substr(evo_line, 1, 2))
+  
+snps_count  
+  ggplot(aes(x=count, fill=metal)) +
+  geom_histogram(binwidth = 1) +
+  scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+  labs(x="Number of mutations", y="Number of evolved lines") +
+  theme_bw()
+ggsave("number_mutations.png", width=7, height=5, units = "in")
+```
+```{r}
+kruskal_test_result <- kruskal.test(count ~ metal, data = snps_count)
+print(kruskal_test_result)
+
+dunn_test_result <- dunn.test(snps_count$count, snps_count$metal, method = "bonferroni")
+print(dunn_test_result)
+```
+```{r}
+num_mut_sum <- snps_count %>%
+  group_by(metal) %>% 
+  summarise(avg_num=mean(log(count)), sd_num=sd(log(count)))
+
+ggplot(data = snps_count, aes(x = metal, y = log(count), fill = metal))+
+       scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+       geom_violin(alpha=0.5, position = position_dodge(width = .75),size=1,color=NA) +
+       ggbeeswarm::geom_quasirandom(shape = 21,size=3, dodge.width = .75, color="black",alpha=1,show.legend = F)+
+       #geom_boxplot(notch = FALSE,  outlier.size = -1, color="black",lwd=1, alpha = 0.4,show.legend = F)+
+       geom_point(data=num_mut_sum, aes(x=metal, y=avg_num), shape = 21,size=4,, fill="black",alpha=1)+
+       geom_errorbar(data=num_mut_sum, aes(x=metal, ymin=avg_num-sd_num, ymax=avg_num+sd_num), width=.2, inherit.aes = FALSE) +
+       theme_bw()+
+       ylab(c("log(Number) of mutations per evolved line"))  +
+       xlab(c("Evolution environment"))  +
+       #rremove("legend.title")+
+       theme(#panel.border = element_rect(colour = "black", fill=NA, size=2),
+             axis.line = element_line(colour = "black",linewidth=1),
+             axis.ticks = element_line(linewidth=1,color="black"),
+             axis.text = element_text(color="black"),
+             axis.ticks.length=unit(0.2,"cm"),
+             legend.position = "none")+
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+ggsave("log_num_mutations.png")
+```
+

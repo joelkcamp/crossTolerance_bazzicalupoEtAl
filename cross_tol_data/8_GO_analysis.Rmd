@@ -7,17 +7,16 @@ date: '2023-05-12'
 ```{r}
 library(tidyverse)
 library(forcats)
+library(readr)
 x = getwd()
 setwd(x)
 ```
 
 ```{r}
-mutations <- read.csv("snps/mutations_haploid.csv") 
-mutations <- mutations %>% 
-  select(-X) %>% 
+mutations <- read_tsv("snps/snpsFINAL_fixed.tsv") %>% 
+  select(evo_line, GENE, CHROM, POS, REF, ALT, metal) %>% 
   rename("E1"="metal") %>% 
   arrange(evo_line) 
-mutations$evo_line <- gsub("_.*", "", mutations$evo_line)
 
 fitness <- read.csv("snps/pval_data.csv")
 
@@ -37,27 +36,39 @@ fitness_wider$evo_line <- gsub("_", "", fitness_wider$evo_line)
 
 mut_fitness <- left_join(mutations, fitness_wider, by = "evo_line")
 mut_pleio <- mut_fitness %>% 
-  filter(evo_line != "MnBM42") %>% 
-  relocate(INFO, .after=Zn) %>% 
-  relocate(QUAL, .after=ALT) %>% 
+  filter(evo_line != "MnBM42" & evo_line != "MnBM14") %>% 
   select(-c(.YPAD)) %>% 
   arrange(Cd,Co,Cu,Mn,Ni,Zn) #%>% 
   #write.csv("mutations_pleiotropy_pvalues_Mn42removed.csv")
-mut_pleio$GENE_abbrev <- str_extract(mut_pleio$GENE, "^.*(?= - )")
-mut_pleio <- mut_pleio %>% 
-  relocate(GENE_abbrev, .before=GENE)
+#mut_pleio$GENE_abbrev <- str_extract(mut_pleio$GENE, "^.*(?= - )")
+#mut_pleio <- mut_pleio %>% 
+  #relocate(GENE_abbrev, .before=GENE)
 ```
 
 #GO slim - broader categories, easier to explain methods
 ##9terms did not map with GOslim, so these are added manually to the tsv (GOslim_component_final.tsv)
 ```{r}
-
-component_slim <- read_tsv("snps/GOslim_component_final.tsv") %>% 
+component_slim <- read_tsv("snps/component_verified_final_ext.tsv") %>% 
   mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
   mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
   select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) %>% 
   pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
-component_slim$TERM <- factor(component_slim$TERM, levels=c("exosome","Golgi transport complex", "chromosome","cell wall", "cytoskeleton","cell cortex","cellular bud","nucleolus","site of polarized growth","endoplasmic reticulum","vacuole","mitochondrion","plasma membrane","membrane","cytoplasm","nucleus","unknown"))
+component_slim$TERM <- factor(component_slim$TERM, 
+                              levels=c("cell wall",
+                                       "peroxisome",
+                                       "cytoskeleton",
+                                       "mitochondrial envelope",
+                                       "cell cortex",
+                                       "nucleolus",
+                                       "cellular bud",
+                                       "site of polarized growth",
+                                       "plasma membrane",
+                                       "endoplasmic reticulum",
+                                       "vacuole",
+                                       "membrane",
+                                       "mitochondrion",
+                                       "cytoplasm",
+                                       "nucleus"))
 ```
 ```{r}
 component_slim %>% 
@@ -67,66 +78,298 @@ component_slim %>%
     labs(x="Cellular Component", y="Proportion") +
     theme_classic() +
     theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
-ggsave("figures/GOslim_enriched_mut.png", width=7,height=4,units="in",dpi=700)
+ggsave("figures/GOslim_enriched_mut_vertical_FINAL.png", width=7,height=4,units="in",dpi=700)
+
+component_slim %>% 
+  drop_na() %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    coord_flip() +
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Cellular Component", y="Proportion") +
+    theme_classic() +
+    theme(legend.position=c(0.8, 0.2))
+ggsave("GOslim_enriched_mut_horizontal_FINAL.png", width=7,height=4,units="in",dpi=700)
+
+
+component_slim %>% 
+  drop_na() %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(width = 0.8, position = position_dodge(width = 0.9)) +
+    coord_flip() +
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Cellular Component", y="Proportion") +
+    theme_classic() +
+    theme(legend.position=c(0.8, 0.2))
+
 ```
 ```{r}
-component_long <- read_tsv("snps/GOslim_component_long_final.tsv")
-component_long <-component_long %>%
-  rename(GENE_abbrev=GENE)
+#I need to make a long format list of the component by gene
+component_slim %>% 
+  select(TERM,ANNOTATED_GENES) %>% 
+  distinct() %>% 
+  write_tsv("component_slim_inter.tsv")
+
+#The unslim annotations were added to this list
+component_long <- read_tsv("snps/component_slim_long_final.tsv")
+#component_unslim <- read_tsv("snps/unslim_component.tsv") %>% 
+  #relocate(GENE, .before=TERM)
+#component_long_ext <-component_long %>%
+  #rbind(component_unslim)
+
 evol_mut_component <- left_join(mut_pleio, component_long) %>%
-  arrange(COMPONENT, E1) %>% 
-  drop_na()
+  arrange(TERM, E1) %>% 
+  select(-c(Cd,Co,Cu,Mn,Ni,Zn))
 ```
 ```{r}
 evol_mut_component_summary <- evol_mut_component %>% 
-  group_by(E1, COMPONENT) %>% 
+  group_by(E1, TERM) %>% 
   summarise(total=n())
 
-evol_mut_component_summary$COMPONENT <- as.factor(evol_mut_component_summary$COMPONENT )
+evol_mut_component_summary2 <- evol_mut_component_summary %>% 
+  group_by(TERM) %>% 
+  summarise(sum(total))
 
-evol_mut_component_summary$COMPONENT <- factor(evol_mut_component_summary$COMPONENT, levels=c("exosome","Golgi transport complex", "chromosome","cell wall", "cytoskeleton","cell cortex","cellular bud","nucleolus","site of polarized growth","endoplasmic reticulum","vacuole","mitochondrion","plasma membrane","membrane","cytoplasm","nucleus","unknown"))
+evol_mut_component_summary$TERM <- as.factor(evol_mut_component_summary$TERM)
+
+evol_mut_component_summary$TERM <- factor(evol_mut_component_summary$TERM,
+                                               levels=c("cell wall",
+                                                        "peroxisome",
+                                                        "cytoskeleton",
+                                                        "mitochondrial envelope",
+                                                        "cell cortex",
+                                                        "nucleolus",
+                                                        "cellular bud",
+                                                        "site of polarized growth",
+                                                        "plasma membrane",
+                                                        "endoplasmic reticulum",
+                                                        "vacuole",
+                                                        "membrane",
+                                                        "mitochondrion",
+                                                        "cytoplasm",
+                                                        "nucleus"))
 
 evol_mut_component_summary %>%
-  ggplot(aes(x=COMPONENT, y=total, fill=E1)) + 
+  drop_na() %>% 
+  ggplot(aes(x=TERM, y=total, fill=E1)) + 
   geom_bar(stat="identity") + 
-  labs(x="Cellular Component", y = "Number of significant Genes") +
+  coord_flip() +
+  labs(x="Cellular Component", y = "Number of Genes") +
   scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
   theme_classic() +
   theme(axis.text.x = element_text(angle=45, hjust=1))
-ggsave("figures/component_for_enrich_final.png", width=7,height=5,units="in",dpi=700)
+ggsave("component_for_enrich_FINAL.png", width=7,height=5,units="in",dpi=700)
+```
+
+```{r}
+process_slim <- read_tsv("snps/process_verified_final.tsv") %>% 
+  mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
+  mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
+  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) %>% 
+  pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
+#I have determined the top 15 most significantly enriched processes by pvalue of fisher's exact
+process_slim$TERM <- factor(process_slim$TERM, 
+                              levels=c("cell morphogenesis",
+                                       "cytokinesis",
+                                       "vacuole organization",
+                                       "regulation of DNA metabolism",
+                                       "nucleobase-containing compound transport",
+                                       "carbohydrate metabolism",
+                                       "DNA recombination",
+                                       "organelle fission",
+                                       "cell wall organization or biogenesis",
+                                       "proteolysis involved in protein catabolism",
+                                       "regulation of cell cycle",
+                                       "DNA repair",
+                                       "meiotic cell cycle",
+                                       "mitotic cell cycle",
+                                       "response to chemical"))
+```
+```{r}
+process_slim %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Biological Process", y="Proportion") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
+ggsave("figures/GOslim_enriched_process_vertical_FINAL.png", width=7,height=4,units="in",dpi=700)
+
+process_slim %>% 
+  drop_na() %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    coord_flip() +
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Biological Process", y="Proportion") +
+    theme_classic() +
+    theme(legend.position=c(0.8, 0.2))
+ggsave("GOslim_enriched_process_horizontal_FINAL.png", width=7,height=4,units="in",dpi=700)
+```
+```{r}
+#I need to make a long format list of the component by gene
+process_slim %>% 
+  select(TERM,ANNOTATED_GENES) %>% 
+  distinct() %>% 
+  drop_na() %>% 
+  write_tsv("process_slim_inter.tsv")
+
+#The unslim annotations were added to this list
+process_long <- read_tsv("snps/process_slim_long_final.tsv")
+#component_unslim <- read_tsv("snps/unslim_component.tsv") %>% 
+  #relocate(GENE, .before=TERM)
+#component_long_ext <-component_long %>%
+  #rbind(component_unslim)
+
+evol_mut_process <- left_join(mut_pleio, process_long) %>%
+  arrange(TERM, E1) %>% 
+  select(-c(Cd,Co,Cu,Mn,Ni,Zn))
+```
+```{r}
+evol_mut_process_summary <- evol_mut_process %>% 
+  group_by(E1, TERM) %>% 
+  summarise(total=n())
+
+evol_mut_process_summary$TERM <- as.factor(evol_mut_process_summary$TERM)
+
+evol_mut_process_summary$TERM <- factor(evol_mut_process_summary$TERM,
+                                               levels=c("cell morphogenesis",
+                                       "cytokinesis",
+                                       "vacuole organization",
+                                       "regulation of DNA metabolism",
+                                       "nucleobase-containing compound transport",
+                                       "carbohydrate metabolism",
+                                       "DNA recombination",
+                                       "organelle fission",
+                                       "cell wall organization or biogenesis",
+                                       "proteolysis involved in protein catabolism",
+                                       "regulation of cell cycle",
+                                       "DNA repair",
+                                       "meiotic cell cycle",
+                                       "mitotic cell cycle",
+                                       "response to chemical"))
+
+evol_mut_process_summary %>%
+  drop_na() %>% 
+  ggplot(aes(x=TERM, y=total, fill=E1)) + 
+  geom_bar(stat="identity") + 
+  coord_flip() +
+  labs(x="Biological Process", y = "Number of Genes") +
+  scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("process_for_enrich_FINAL.png", width=8.5,height=5,units="in",dpi=700)
 ```
 
 
-#GOslim process
-##7 terms did not map with GOslim, so these are added manually to the tsv (GOslim_process_final.tsv)
+#GOslim function
 ```{r}
-process_slim0 <- read_tsv("snps/GOslim_process_final.tsv") 
-process_slim0$TERM <- as.factor(process_slim0$TERM)
-
-process_slim00 <- process_slim0 %>% 
+function_slim <- read_tsv("snps/function_verified_final.tsv") %>% 
   mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
   mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
-  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES)
-
-process_slim00 <- process_slim00 %>% 
-  arrange(evol_mutations)
-process_levels <- process_slim00$TERM
-
-process_slim <- process_slim00 %>%
+  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) %>% 
   pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
+#These are the top 15 most frequent GOterms in my set
+function_slim$TERM <- factor(function_slim$TERM, 
+                              levels=c("cytoskeletal protein binding",
+                                       "glycosyltransferase activity",
+                                       "nuclease activity",
+                                       "ATP hydrolysis activity",
+                                       "lipid binding",
+                                       "DNA-binding transcription factor activity",
+                                       "protein-macromolecule adaptor activity",
+                                       "oxidoreductase activity",
+                                       "mRNA binding",
+                                       "RNA binding",
+                                       "enzyme regulator activity",
+                                       "kinase activity",
+                                       "transmembrane transporter activity",
+                                       "DNA binding",
+                                       "ion binding"))
+```
+```{r}
+function_slim %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Molecular Function", y="Proportion") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
+ggsave("figures/GOslim_enriched_function_vertical_FINAL.png", width=7,height=4,units="in",dpi=700)
 
-process_slim$TERM <- gsub("metabolic process", "metabolism", process_slim$TERM)
-process_slim$TERM <- gsub("modification process", "modification", process_slim$TERM)
+function_slim %>% 
+  drop_na() %>% 
+  ggplot(aes(x=TERM, y=proportion, fill=info)) +
+    geom_bar(stat="identity", position=position_dodge()) + 
+    coord_flip() +
+    scale_fill_manual(values = c("cornflowerblue", "black")) +
+    labs(x="Molecular Function", y="Proportion") +
+    theme_classic() +
+    theme(legend.position=c(0.8, 0.2))
+ggsave("GOslim_enriched_function_horizontal_FINAL.png", width=7,height=4,units="in",dpi=700)
+```
+```{r}
+#I need to make a long format list of the component by gene
+function_slim %>% 
+  select(TERM,ANNOTATED_GENES) %>% 
+  distinct() %>% 
+  drop_na() %>% 
+  write_tsv("function_slim_inter.tsv")
 
-process_slim$TERM <- factor(process_slim$TERM, levels=c("carbohydrate metabolism", "regulation of DNA metabolism", "regulation of translation", "regulation of cell cycle", "lipid metabolism", "mitotic cell cycle", "regulation of protein modification", "cellular ion homeostasis", "transcription by RNA polymerase II", "proteolysis", "regulation of organelle organization", "rRNA processing", "transmembrane transport", "ion transport", "response to chemical", "unknown"))
+#The unslim annotations were added to this list
+function_long <- read_tsv("snps/function_slim_long_final.tsv")
+#component_unslim <- read_tsv("snps/unslim_component.tsv") %>% 
+  #relocate(GENE, .before=TERM)
+#component_long_ext <-component_long %>%
+  #rbind(component_unslim)
+
+evol_mut_function <- left_join(mut_pleio, function_long) %>%
+  arrange(TERM, E1) %>% 
+  select(-c(Cd,Co,Cu,Mn,Ni,Zn)) %>% 
+  drop_na()
+```
+```{r}
+evol_mut_function_summary <- evol_mut_function %>% 
+  group_by(E1, TERM) %>% 
+  summarise(total=n())
+
+evol_mut_function_summary$TERM <- as.factor(evol_mut_function_summary$TERM)
+
+evol_mut_function_summary$TERM <- factor(evol_mut_function_summary$TERM,
+                                               levels=c("cytoskeletal protein binding",
+                                       "glycosyltransferase activity",
+                                       "nuclease activity",
+                                       "ATP hydrolysis activity",
+                                       "lipid binding",
+                                       "DNA-binding transcription factor activity",
+                                       "protein-macromolecule adaptor activity",
+                                       "oxidoreductase activity",
+                                       "mRNA binding",
+                                       "RNA binding",
+                                       "enzyme regulator activity",
+                                       "kinase activity",
+                                       "transmembrane transporter activity",
+                                       "DNA binding",
+                                       "ion binding"))
+
+evol_mut_function_summary %>%
+  ggplot(aes(x=TERM, y=total, fill=E1)) + 
+  geom_bar(stat="identity") + 
+  coord_flip() +
+  labs(x="Molecular Function", y = "Number of Genes") +
+  scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("function_for_enrich_FINAL.png", width=8.5,height=5,units="in",dpi=700)
 ```
 
 
 # Fisher's exact tests with wouter help
 ```{r}
 
-component_fisher <- read_tsv("snps/GOslim_component_final.tsv")
-process_fisher <- read_tsv("snps/GOslim_process_final.tsv")
+component_fisher <- read_tsv("snps/component_verified_final_ext.tsv")
+process_fisher <- read_tsv("snps/process_verified_final.tsv")
+function_fisher <- read_tsv("snps/function_verified_final.tsv")
 
 my_fisher_exact <- function(i1, i2, i3, i4) {
   fisher.test(matrix(c(i1, i2, i3, i4), nrow = 2))
@@ -149,8 +392,19 @@ process_fisher <- process_fisher %>%
   )
 process_fisher$pval
 
+function_fisher <- function_fisher %>% 
+  rowwise() %>% 
+  mutate(
+    fisher = list(my_fisher_exact(NUM_LIST_ANNOTATIONS, LIST_SIZE, TOTAL_NUM_ANNOTATIONS, POPULATION_SIZE)),
+    pval = fisher$p.value
+  )
+function_fisher$pval
+
 component_pval=subset(component_fisher, select = -c(fisher) )
-process_pval=subset(process_fisher, select = -c(fisher) )
+process_pval=subset(process_fisher, select = -c(fisher) ) %>% 
+  select(TERM, CLUSTER_FREQUENCY, GENOME_FREQUENCY,pval)
+function_pval=subset(function_fisher, select = -c(fisher) ) %>% 
+  select(TERM, CLUSTER_FREQUENCY, GENOME_FREQUENCY,pval)
 
 write_csv(component_pval,"snps/GOslim_component_fisher_pval.csv" )
 write_csv(process_pval,"snps/GOslim_process_fisher_pval.csv" )
@@ -159,29 +413,38 @@ write_csv(process_pval,"snps/GOslim_process_fisher_pval.csv" )
 ```
 
 
-# top 15 
-```{r}
-#process_pval=read_csv("snps/GOslim_process_fisher_pval.csv")
-process_pval_15 = process_pval %>% # Top 15 highest p-values by TERM
-  slice_min(pval, n = 15)
 
-process_pval_15_0 <- process_pval_15 %>% 
+
+
+
+
+
+
+#The graphs I made for process above include the top 15 most significantly enriched terms, but for consistency with the other 2 graphs, I need to make a process graph showing the top 15 most common terms in my set:
+
+```{r}
+process_slim <- read_tsv("snps/process_verified_final.tsv") %>% 
   mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
   mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
-  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) 
-
-process_pval_15_0 <- process_pval_15_0 %>% 
-  arrange(evol_mutations)
-process_levels <- process_pval_15_0$TERM
-
-process_slim_15 <- process_pval_15_0 %>%
+  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) %>% 
   pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
-
-process_slim_15$TERM <- factor(process_slim_15$TERM, levels=process_levels)
-
-process_slim_15$TERM <- factor(process_slim_15$TERM)
+#I have determined the top 15 most significantly enriched processes by pvalue of fisher's exact
+process_slim$TERM <- factor(process_slim$TERM, 
+                              levels=c("DNA recombination",
+                                       "cytoskeleton organization",
+                                       "organelle fission",
+                                       "regulation of organelle organization",
+                                       "chromatin organization",
+                                       "cell wall organization or biogenesis",
+                                       "proteolysis involved in protein catabolism",
+                                       "regulation of cell cycle",
+                                       "lipid metabolism",
+                                       "DNA repair",
+                                       "meiotic cell cycle",
+                                       "mitotic cell cycle",
+                                       "response to chemical",
+                                       "transcription by RNA polymerase II"))
 ```
-
 ```{r}
 process_slim %>% 
   ggplot(aes(x=TERM, y=proportion, fill=info)) +
@@ -190,66 +453,69 @@ process_slim %>%
     labs(x="Biological Process", y="Proportion") +
     theme_classic() +
     theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
-ggsave("figures/GOslim_enriched_mut.png", width=7,height=4,units="in",dpi=700)
+ggsave("figures/GOslim_enriched_process_vertical_FINAL.png", width=7,height=4,units="in",dpi=700)
 
-process_slim_15 %>% 
+process_slim %>% 
+  drop_na() %>% 
   ggplot(aes(x=TERM, y=proportion, fill=info)) +
     geom_bar(stat="identity", position=position_dodge()) + 
+    coord_flip() +
     scale_fill_manual(values = c("cornflowerblue", "black")) +
     labs(x="Biological Process", y="Proportion") +
     theme_classic() +
-    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8),plot.margin = margin(0.2,0.2,0.2,0.8, "cm"))
-ggsave("figures/GOslim_enriched_mut_15.png", width=7.1,height=4,units="in",dpi=700)
+    theme(legend.position=c(0.8, 0.2))
+ggsave("GOslim_enriched_process_horizontal_TOP15.png", width=7,height=4,units="in",dpi=700)
 ```
-
 ```{r}
-#process_long <- read_tsv("snps/GOslim_process_ext_long.tsv") %>% 
-process_long <- read_tsv("snps/GOslim_process_final.tsv") %>% 
-  rename("GENE_abbrev"="ANNOTATED_GENES")
-process_long$GENE_abbrev <- gsub("YKL126W", "YPK1", process_long$GENE_abbrev)
-process_long$GENE_abbrev <- gsub("YKR103W", "NFT1", process_long$GENE_abbrev)
+#I need to make a long format list of the component by gene
+process_slim %>% 
+  select(TERM,ANNOTATED_GENES) %>% 
+  distinct() %>% 
+  drop_na() %>% 
+  write_tsv("process_slim_inter.tsv")
 
-evol_mut_process <- left_join(mut_pleio, process_long) %>% 
-  rename("PROCESS"="TERM") %>% 
-  arrange(PROCESS, E1)
+#The unslim annotations were added to this list
+process_long <- read_tsv("snps/process_slim_long_final.tsv")
+#component_unslim <- read_tsv("snps/unslim_component.tsv") %>% 
+  #relocate(GENE, .before=TERM)
+#component_long_ext <-component_long %>%
+  #rbind(component_unslim)
+
+evol_mut_process <- left_join(mut_pleio, process_long) %>%
+  arrange(TERM, E1) %>% 
+  select(-c(Cd,Co,Cu,Mn,Ni,Zn))
 ```
 ```{r}
 evol_mut_process_summary <- evol_mut_process %>% 
-  group_by(E1, PROCESS) %>% 
+  group_by(E1, TERM) %>% 
   summarise(total=n())
 
-evol_mut_process_summary$PROCESS <- as.factor(evol_mut_process_summary$PROCESS)
+evol_mut_process_summary$TERM <- as.factor(evol_mut_process_summary$TERM)
 
-#evol_mut_process_summary$PROCESS <- factor(evol_mut_process_summary$PROCESS, levels=c("phosphate metabolism", "aldehyde metabolism", "sno(s)RNA processing", "cell morphogenesis", "protein alkylation", "cellular ion homeostasis", "regulation of DNA metabolism", "invasive growth in response to glucose limitation", "nucleobase-containing compound transport", "regulation of protein modification process", "proteolysis involved in protein catabolism", "cell wall organization or biogenesis", "transmembrane transport", "ion transport", "response to chemical", "unknown"))
+evol_mut_process_summary$TERM <- factor(evol_mut_process_summary$TERM,
+                                               levels=c("DNA recombination",
+                                       "cytoskeleton organization",
+                                       "organelle fission",
+                                       "regulation of organelle organization",
+                                       "chromatin organization",
+                                       "cell wall organization or biogenesis",
+                                       "proteolysis involved in protein catabolism",
+                                       "regulation of cell cycle",
+                                       "lipid metabolism",
+                                       "DNA repair",
+                                       "meiotic cell cycle",
+                                       "mitotic cell cycle",
+                                       "response to chemical",
+                                       "transcription by RNA polymerase II"))
 
 evol_mut_process_summary %>%
   drop_na() %>% 
-  ggplot(aes(x=PROCESS, y=total, fill=E1)) + 
+  ggplot(aes(x=TERM, y=total, fill=E1)) + 
   geom_bar(stat="identity") + 
-  labs(x="Cellular Component", y = "Number of significant Genes") +
+  coord_flip() +
+  labs(x="Biological Process", y = "Number of Genes") +
   scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle=45, hjust=1), plot.margin = margin(0.2,0.2,0.2,0.8, "cm"))
-ggsave("figures/process_for_enrich.png", width=7,height=5,units="in",dpi=700)
-```
-
-#GOslim function
-```{r}
-function_slim <- read_tsv("snps/GOslim_function_final.tsv") %>% 
-  mutate(evol_mutations=NUM_LIST_ANNOTATIONS/LIST_SIZE,.after=LIST_SIZE) %>% 
-  mutate(whole_genome=TOTAL_NUM_ANNOTATIONS/POPULATION_SIZE,.after=POPULATION_SIZE) %>% 
-  select(TERM,evol_mutations,whole_genome, ANNOTATED_GENES) %>% 
-  arrange(evol_mutations, whole_genome) %>% 
-  pivot_longer(cols=c(evol_mutations,whole_genome), names_to = "info", values_to = "proportion")
-function_slim$TERM <- factor(function_slim$TERM, levels=c("translation factor activity, RNA binding", "ATP hydrolysis activity", "hydrolase activity", "ligase activity", "chromatin binding", "rRNA binding", "lipid binding", "peptidase activity", "nuclease activity", "guanyl-nucleotide exchange factor activity", "cytoskeletal protein binding", "methyltransferase activity", "enzyme binding", "glycosyltransferase activity", "protein binding", "DNA-binding transcription factor activity", "transferase activity", "oxidoreductase activity", "protein-macromolecule adaptor activity", "ion binding", "mRNA binding", "DNA binding", "kinase activity", "enzyme regulator activity", "RNA binding", "transmembrane transporter activity"))
-```
-```{r}
-function_slim %>% 
-  ggplot(aes(x=TERM, y=proportion, fill=info)) +
-    geom_bar(stat="identity", position=position_dodge()) + 
-    scale_fill_manual(values = c("cornflowerblue", "black")) +
-    labs(x="Molecular Function", y="Proportion") +
-    theme_classic() +
-    theme(axis.text.x = element_text(angle=45, hjust=1),legend.position=c(0.15, 0.8))
-ggsave("figures/GOslim_enriched_function_all.png", width=7,height=4,units="in",dpi=700)
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("process_for_enrich_TOP15.png", width=8.5,height=5,units="in",dpi=700)
 ```
