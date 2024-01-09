@@ -1,0 +1,280 @@
+---
+title: "mutation type"
+output: html_document
+date: '2023-12-28'
+---
+
+```{r }
+library(tidyverse)
+library(ggridges)
+library(ggplot2)
+library(viridis)
+library(cowplot)
+#library(hrbrthemes)
+x = getwd()
+setwd(x)
+
+mut = read.csv("snps/mutation_type.csv")
+
+g = ggplot(mut, aes(mutation))
+
+g + geom_bar(aes(fill = metal)) +
+  scale_fill_manual(values=c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "white", "black", "#FFF200", "#A880FF"))
+
+table(mut$mutation)
+
+mutDel=mut %>%
+  filter(mutation=="del")
+mDel = ggplot(mutDel, aes(metal))
+mDel + geom_bar(aes(fill = "grey"))
+table(mutDel$metal)
+```
+
+
+
+## mutational spectrum
+following categories from the spectrum of single base-pair mutations observed within Gerstein et al. (2015) (8 A:T > G:C, 14 G:C > A:T, 6 A:T > T:A, 12 G:C > T:A, 5 A:T > C:G, 7 G:C > C:G)
+
+
+```{r }
+
+mut2 = mut %>%
+  filter(mutation != "del") %>% #remove deletion
+  filter(mutation != "dup")  #remove duplication
+mut2$mutation[mut2$mutation == 'A>G'] <- 'A:T > G:C'
+mut2$mutation[mut2$mutation == 'T>C'] <- 'A:T > G:C'
+mut2$mutation[mut2$mutation == 'G>A'] = "G:C > A:T"
+mut2$mutation[mut2$mutation == 'C>T'] = "G:C > A:T"
+mut2$mutation[mut2$mutation == "A>T"] = "A:T > T:A"
+mut2$mutation[mut2$mutation == "T>A"] = "A:T > T:A"
+mut2$mutation[mut2$mutation == "G>T"] = "G:C > T:A"
+mut2$mutation[mut2$mutation == "C>A"] = "G:C > T:A"
+mut2$mutation[mut2$mutation == "A>C"] = "A:T > C:G"
+mut2$mutation[mut2$mutation == "T>G"] = "A:T > C:G"
+mut2$mutation[mut2$mutation == "G>C"] = "G:C > C:G"
+mut2$mutation[mut2$mutation == "C>G"] = "G:C > C:G"
+
+g = ggplot(mut2, aes(mutation))
+
+g + geom_bar(aes(fill = metal)) +
+  scale_fill_manual(values=c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "white", "black", "#FFF200", "#A880FF"))
+
+
+```
+
+
+
+
+
+set it without MnBM42 and MnBM14
+
+only MnBM42
+
+only MnBM14
+
+
+```{r }
+
+mutmet = mut2 %>%
+  filter(metal!="MnBM42")%>%
+  filter(metal!="MnBM14")
+
+altro = ggplot(mutmet, aes(mutation))
+
+altro + geom_bar(aes(fill = metal)) +
+  scale_fill_manual(values=c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"))
+
+mutCd=mut2 %>%
+  filter(metal=="Cd")
+mCd = ggplot(mutCd, aes(mutation))
+mCd + geom_bar(aes(fill = "#FF9A17"))
+
+mutCo=mut2 %>%
+  filter(metal=="Co")
+mCo = ggplot(mutCo, aes(mutation))
+mCo + geom_bar(aes(fill = "#3B83FF"))
+
+mutCu=mut2 %>%
+  filter(metal=="Cu")
+mCu = ggplot(mutCu, aes(mutation))
+mCu + geom_bar(aes(fill = "#3EFF3B"))
+
+mutMn=mut2 %>%
+  filter(metal=="Mn")
+mMn = ggplot(mutMn, aes(mutation))
+mMn + geom_bar(aes(fill = "#FD73FF"))
+
+mutNi=mut2 %>%
+  filter(metal=="Ni")
+mNi = ggplot(mutNi, aes(mutation))
+mNi + geom_bar(aes(fill = "#FFF200"))
+
+mutZn=mut2 %>%
+  filter(metal=="Zn")
+mZn = ggplot(mutZn, aes(mutation))
+mZn + geom_bar(aes(fill = "#A880FF"))
+
+
+mut42 = mut2 %>%
+  filter(metal=="MnBM42")
+m42 = ggplot(mut42, aes(mutation))
+m42 + geom_bar(aes(fill = "hotpink"))
+
+mut14 = mut2 %>%
+  filter(metal=="MnBM14")
+m14 = ggplot(mut42, aes(mutation, color ="magenta"))
+m14 + geom_bar(aes(colour = "magenta"))
+
+
+
+```
+
+## Spectrum of base-substitutional mutations from Lynch et al. (2008) Table 1 
+Set expectation of proportaions based mutational spectrum from Lynch et al
+Summary of studies and their mutation-accumulation study
+
+## Gerstein et al mutational spectrum
+Repeat test as sanity check with gerstein data
+the spectrum of single base-pair mutations observed within Gerstein et al. (2015) (8 A:T > G:C, 14 G:C > A:T, 6 A:T > T:A, 12 G:C > T:A, 5 A:T > C:G, 7 G:C > C:G)
+
+## spectra of metals
+test metals, and the two lines against Lynch et al.
+e.g. table(mutCd$mutation)
+
+
+```{r }
+
+
+types = c("A:T > G:C", "G:C > A:T", "A:T > T:A", "G:C > T:A", "A:T > C:G", "G:C > C:G")
+lynch_other = c(0.102, 0.277, 0.069, 0.313, 0.05, 0.189)
+lynch_ma = c(0.118, 0.265, 0.058, 0.265, 0.147, 0.147)
+gerstein = c(8, 14, 6, 12, 5, 7)
+gerstein.prop = c(8/52, 14/52, 6/52, 12/52, 5/52, 7/52)
+Cd = c(8,13,0,2,2,1)
+Cd.prop = c(8/26, 13/26, 0/26,2/26,2/26,1/26)
+Co = c(9, 25, 12, 13, 9, 12)
+Co.prop = c(9/80, 25/80, 12/80, 13/80, 9/80, 12/80)
+Cu = c(5, 7, 0, 4, 2, 1)
+Cu.prop = c(5/19, 7/19, 0/19, 4/19, 2/19, 1/19)
+Mn = c(8, 23, 13, 12, 5, 5)
+Mn.prop = c(8/66, 23/66, 13/66, 12/66, 5/66, 5/66)
+Ni = c(3, 7, 1, 7, 0, 1)
+Ni.prop = c(3/19, 7/19, 1/19, 7/19, 0/19, 1/19)
+Zn = c(5, 6, 4, 7, 1, 7)
+Zn.prop = c(5/30, 6/30, 4/30, 7/30, 1/30, 7/30)
+MnBM42 = c(21, 34, 7, 21, 6, 2)
+MnBM42.prop = c(21/91, 34/91, 7/91, 21/91, 6/91, 2/91)
+MnBM14 = c(4, 24, 2, 1, 0, 1)
+MnBM14.prop = c(4/32, 24/32, 2/32, 1/32, 0/32, 1/32)
+
+spectra = data.frame(types, lynch_other, gerstein, Cd, Co, Cu, Mn, Ni, Zn, MnBM14, MnBM42, gerstein.prop, Cd.prop, Co.prop, Cu.prop, Mn.prop, Ni.prop, Zn.prop, MnBM14.prop, MnBM42.prop)
+
+
+ger_res <- chisq.test(gerstein, p = lynch_other)
+ger_res #X-squared = 7.1557, df = 5, p-value = 0.2093
+ger_res1 <- chisq.test(gerstein, p = lynch_ma)
+ger_res1 #X-squared = 4.7208, df = 5, p-value = 0.4509
+
+
+Cd_res <- chisq.test(Cd, p = lynch_other) #X-squared = 25.37, df = 5, p-value = 0.0001182
+Co_res <- chisq.test(Co, p = lynch_other) #X-squared = 20.74, df = 5, p-value = 0.0009068
+Cu_res <- chisq.test(Cu, p = lynch_other) #X-squared = 10.39, df = 5, p-value = 0.06492
+Mn_res <- chisq.test(Mn, p = lynch_other) #X-squared = 26.103, df = 5, p-value = 8.522e-05
+Ni_res <- chisq.test(Ni, p = lynch_other) #X-squared = 4.2349, df = 5, p-value = 0.5161
+Zn_res <- chisq.test(Zn, p = lynch_other) #X-squared = 4.7585, df = 5, p-value = 0.4461
+MnBM42_res <- chisq.test(MnBM42, p = lynch_other) #X-squared = 33.803, df = 5, p-value = 2.606e-06
+MnBM14_res <- chisq.test(MnBM14, p = lynch_other) #X-squared = 39.961, df = 5, p-value = 1.521e-07
+
+#bonferroni correction for 8 tests=0.00625
+
+
+```
+
+```{r}
+
+pl=ggplot(spectra, aes(x=factor(types), y = lynch_other))+
+  geom_bar(stat="identity", width=0.7, fill="grey")+
+  theme_minimal() +
+  ylim(0,0.75) +
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="Lynch et al. (2008)")
+
+pg=ggplot(spectra, aes(x=factor(types), y = gerstein.prop))+
+  geom_bar(stat="identity", width=0.7, fill="black")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="Gerstein et al. (2015)")
+pcd=ggplot(spectra, aes(x=factor(types), y = Cd.prop))+
+  geom_bar(stat="identity", width=0.7, fill="#FF9A17")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="*Cadmium")
+pco=ggplot(spectra, aes(x=factor(types), y = Co.prop))+
+  geom_bar(stat="identity", width=0.7, fill="#3B83FF")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="*Cobalt")
+pcu=ggplot(spectra, aes(x=factor(types), y = Cu.prop))+
+  geom_bar(stat="identity", width=0.7, fill="#3EFF3B")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="Copper")
+pmn=ggplot(spectra, aes(x=factor(types), y = Mn.prop))+
+  geom_bar(stat="identity", width=0.7, fill="#FD73FF")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="*Manganese (ex. MnBM14 & MnBM42)")
+pni=ggplot(spectra, aes(x=factor(types), y = Ni.prop))+
+  geom_bar(stat="identity", width=0.7, fill="#FFF200")+
+  theme_minimal()+
+  ylim(0,0.7)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="Nickel")
+pzn=ggplot(spectra, aes(x=factor(types), y = Zn.prop))+
+  geom_bar(stat="identity", width=0.7, fill="#A880FF")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="Zinc")
+p14=ggplot(spectra, aes(x=factor(types), y = MnBM14.prop))+
+  geom_bar(stat="identity", width=0.7, fill="pink")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="*MnBM14")
+p42=ggplot(spectra, aes(x=factor(types), y = MnBM42.prop))+
+  geom_bar(stat="identity", width=0.7, fill="hotpink")+
+  theme_minimal()+
+  ylim(0,0.75)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=10))+
+  labs(x=NULL, y=NULL, title="*MnBM42")
+
+
+```
+
+##plot proportions of the different mutational spectra
+```{r}
+
+plot_grid(pl,pg,pcd, pco,pcu,pmn,pni,pzn,p14,p42, labels = c("A","B","C","D","E","F","G","H","I","J"), ncol = 2, align = "h")
+
+#ggsave("mutationtypes_suppl.jpeg", width=12, height=14, units = "in", dpi=700)
+ggsave("figures/mutationtypes_suppl.jpeg", width=12, height=14, units = "in", dpi=700)
+
+```
+
+
