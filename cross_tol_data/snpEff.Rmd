@@ -11,42 +11,42 @@ library(dunn.test)
 library(ggbeeswarm)
 ```
 ```{r}
-mutations <- read.csv("cross_tol_data/snps/mutations_pk.csv") 
+mutations <- read.csv("snps/mutations_pk_final.csv") 
 ```
 
 #preparing mutations_pk for comparison with snpEff results:
 ```{r}
 regions_file <- mutations %>%
-  select(chr, POS) %>%
+  select(CHROM, POS) %>%
   mutate(
     CHROM = case_when(
-      chr == "chr1" ~ "ref|NC_001133|", 
-      chr == "chr2" ~ "ref|NC_001134|",
-      chr == "chr3" ~ "ref|NC_001135|",
-      chr == "chr4" ~ "ref|NC_001136|",
-      chr == "chr5" ~ "ref|NC_001137|",
-      chr == "chr6" ~ "ref|NC_001138|",
-      chr == "chr7" ~ "ref|NC_001139|",
-      chr == "chr8" ~ "ref|NC_001140|",
-      chr == "chr9" ~ "ref|NC_001141|",
-      chr == "chr10" ~ "ref|NC_001142|",
-      chr == "chr11" ~ "ref|NC_001143|",
-      chr == "chr12" ~ "ref|NC_001144|",
-      chr == "chr13" ~ "ref|NC_001145|",
-      chr == "chr14" ~ "ref|NC_001146|",
-      chr == "chr15" ~ "ref|NC_001147|",
-      chr == "chr16" ~ "ref|NC_001148|",
-      chr == "chrmt" ~ "ref|NC_001224|"
+      CHROM == "chrI" ~ "ref|NC_001133|", 
+      CHROM == "chrII" ~ "ref|NC_001134|",
+      CHROM == "chrIII" ~ "ref|NC_001135|",
+      CHROM == "chrIV" ~ "ref|NC_001136|",
+      CHROM == "chrV" ~ "ref|NC_001137|",
+      CHROM == "chrVI" ~ "ref|NC_001138|",
+      CHROM == "chrVII" ~ "ref|NC_001139|",
+      CHROM == "chrVIII" ~ "ref|NC_001140|",
+      CHROM == "chrIX" ~ "ref|NC_001141|",
+      CHROM == "chrX" ~ "ref|NC_001142|",
+      CHROM == "chrXI" ~ "ref|NC_001143|",
+      CHROM == "chrXII" ~ "ref|NC_001144|",
+      CHROM == "chrXIII" ~ "ref|NC_001145|",
+      CHROM == "chrXIV" ~ "ref|NC_001146|",
+      CHROM == "chrXV" ~ "ref|NC_001147|",
+      CHROM == "chrXVI" ~ "ref|NC_001148|",
+      CHROM == "chrM" ~ "ref|NC_001224|"
     )
   ) %>%
   select(CHROM, POS) %>%
   arrange(CHROM, POS) %>% 
   distinct() %>% 
-  write_tsv("regions_file.tsv")
+  write_tsv("snps/regions_file.tsv")
 ```
 
 ```{r}
-verified_snps <- read_tsv("regions_file_verified_ext.tsv") %>% 
+verified_snps <- read_tsv("snps/regions_file_verified_ext.tsv") %>% 
   mutate(
     CHROM = case_when(
       CHROM1 == "ref|NC_001133|" ~ "chrI", 
@@ -71,24 +71,24 @@ verified_snps <- read_tsv("regions_file_verified_ext.tsv") %>%
   select(-c(CHROM1,verified)) %>% 
   select(CHROM, everything())
   
-snpEff_vcf <- read_tsv("snpEff_results.tsv") %>% 
+snpEff_vcf <- read_tsv("snps/snpEff_results.tsv") %>% 
   select(-c(ID, FILTER, FORMAT, CdBM23_S1:ZnBM47_S95))
 
 snpEff <- left_join(verified_snps, snpEff_vcf, by=c("CHROM","POS")) %>% 
   arrange(CHROM, POS)
 
-snpEff[,"INFO"] %>% write_tsv("snp_INFO.txt")
+snpEff[,"INFO"] %>% write_tsv("snps/snp_INFO.txt")
 snpEff <- snpEff %>% select(-INFO)
 ```
 ```{r}
 mutations$evo_line <- gsub("_.*", "", mutations$evo_line)
-line_E1 <- mutations %>% select(evo_line, metal)
+line_E1 <- mutations %>% select(evo_line, E1)
 
-snpEff_info <- read_tsv("snp_INFO_reduced.tsv")
+snpEff_info <- read_tsv("snps/snp_INFO_reduced.tsv")
 snpsFinal <- cbind(snpEff, snpEff_info) %>% left_join(line_E1) %>% distinct() %>% 
   relocate(c(evo_line,GENE), .before = CHROM) %>% 
   relocate(c(variant, effect), .after = ALT) %>% 
-  write_tsv("snpsFINAL_fixed.tsv")
+  write_tsv("snps/snpsFINAL_fixed.tsv")
 
 unique(snpsFinal$GENE)
 ```
@@ -97,7 +97,7 @@ unique(snpsFinal$GENE)
 snpsFinal %>% 
   drop_na() %>% 
   filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
-  ggplot(aes(x=variant, fill=metal)) +
+  ggplot(aes(x=variant, fill=E1)) +
   geom_bar() +
   coord_flip() +
   scale_x_discrete(limits=c("missense_variant", "frameshift_variant", "synonymous_variant", "stop_gained", "conservative_inframe_deletion", "frameshift_variant&stop_lost&splice_region_variant", "frameshift_variant&start_lost"))
@@ -112,7 +112,7 @@ snpsFinal %>%
 snpsFinal %>% 
   drop_na() %>% 
   filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
-  ggplot(aes(x=metal, fill=variant)) +
+  ggplot(aes(x=E1, fill=variant)) +
   geom_bar() +
   coord_flip() +
   scale_x_discrete(limits=c("Co","Mn","Cd","Zn","Cu","Ni"))
@@ -120,7 +120,7 @@ snpsFinal %>%
 snpsFinal %>% 
   drop_na() %>% 
   filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
-  ggplot(aes(x=metal, fill=effect)) +
+  ggplot(aes(x=E1, fill=effect)) +
   geom_bar() +
   coord_flip() +
   scale_x_discrete(limits=c("Co","Mn","Cd","Zn","Cu","Ni"))
@@ -140,12 +140,12 @@ snpsFinal %>%
   summarize(total=n())
 ```
 ```{r}
-snpsFINAL_Cd <- snpsFinal %>% filter(metal=="Cd") 
-snpsFINAL_Co <- snpsFinal %>% filter(metal=="Co")
-snpsFINAL_Cu <- snpsFinal %>% filter(metal=="Cu")
-snpsFINAL_Mn <- snpsFinal %>% filter(metal=="Mn") %>% filter(evo_line!="MnBM42"&evo_line!="MnBM14")
-snpsFINAL_Ni <- snpsFinal %>% filter(metal=="Ni")
-snpsFINAL_Zn <- snpsFinal %>% filter(metal=="Zn")
+snpsFINAL_Cd <- snpsFinal %>% filter(E1=="Cd") 
+snpsFINAL_Co <- snpsFinal %>% filter(E1=="Co")
+snpsFINAL_Cu <- snpsFinal %>% filter(E1=="Cu")
+snpsFINAL_Mn <- snpsFinal %>% filter(E1=="Mn") %>% filter(evo_line!="MnBM42"&evo_line!="MnBM14")
+snpsFINAL_Ni <- snpsFinal %>% filter(E1=="Ni")
+snpsFINAL_Zn <- snpsFinal %>% filter(E1=="Zn")
 ```
 ```{r}
 unique(snpsFINAL_Zn$GENE)
@@ -153,12 +153,12 @@ unique(snpsFINAL_Zn$GENE)
 ```{r}
 snpsFinal[] <- lapply(snpsFinal, function(x) gsub("TRL 1", "TRL1", x))
 
-process_long <- read_tsv("cross_tol_data/process_slim_long_top15.tsv")
+process_long <- read_tsv("snps/process_slim_long_final.tsv")
 process_long[] <- lapply(process_long, function(x) gsub("YKL126W", "YPK1", x))
-function_long <- read_tsv("cross_tol_data/snps/function_slim_long_final.tsv")
+function_long <- read_tsv("snps/function_slim_long_final.tsv")
 function_long[] <- lapply(function_long, function(x) gsub("YKL126W", "YPK1", x))
 function_long[] <- lapply(function_long, function(x) gsub("TRL 1", "TRL1", x))
-component_long <- read_tsv("cross_tol_data/snps/component_slim_long_final.tsv")
+component_long <- read_tsv("snps/component_slim_long_final.tsv")
 component_long[] <- lapply(component_long, function(x) gsub("YKL126W", "YPK1", x))
 
 snps_effect <- snpsFinal %>% 
@@ -287,7 +287,7 @@ effect_term_compare %>%
   coord_flip() +
   labs(x="GO Term", y="Proportion") +
   theme_bw()
-ggsave("GO_effect2.png", width=7, height=5, units = "in", dpi=700)
+ggsave("figures/GO_effect2.png", width=7, height=5, units = "in", dpi=700)
 
 effect_term_compare %>% 
   ggplot(aes(x=effect, y=prop, fill=term)) +
@@ -296,7 +296,7 @@ effect_term_compare %>%
   coord_flip() +
   labs(title="Effects of significantly targeted GO terms", x="Mutation Effect", y="Proportion") +
   theme_bw()
-ggsave("GO_effect.png", width=10, height=7, units = "in", dpi=700)
+ggsave("figures/GO_effect.png", width=10, height=7, units = "in", dpi=700)
 ```
 
 "black", "#ffd400", "#f985ff", "#bd55ff", "#8d1dff", "#a4ff80", "#6ed0b3", "#00bbec", "#2373ec", "#1200ff"
@@ -382,7 +382,7 @@ strong_selection_genes %>%
 strong_sel_reduced <- strong_selection_genes %>%
   select(-c(TERM_process,TERM_component, TERM_function)) %>%
   filter(!duplicated(.[c("CHROM", "POS", "evo_line")])) %>% 
-  write_csv("strong_sel_reduced.csv")
+  write_csv("snps/strong_sel_reduced.csv")
 ```
 
 
@@ -393,13 +393,13 @@ snps_count <- snpsFinal %>%
   summarize(count=n()) %>% 
   mutate(metal = substr(evo_line, 1, 2))
   
-snps_count  
+snps_count  %>%
   ggplot(aes(x=count, fill=metal)) +
   geom_histogram(binwidth = 1) +
   scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
   labs(x="Number of mutations", y="Number of evolved lines") +
   theme_bw()
-ggsave("number_mutations.png", width=7, height=5, units = "in")
+ggsave("figures/number_mutations.png", width=7, height=5, units = "in")
 ```
 ```{r}
 kruskal_test_result <- kruskal.test(count ~ metal, data = snps_count)
@@ -418,19 +418,19 @@ ggplot(data = snps_count, aes(x = metal, y = log(count), fill = metal))+
        geom_violin(alpha=0.5, position = position_dodge(width = .75),size=1,color=NA) +
        ggbeeswarm::geom_quasirandom(shape = 21,size=3, dodge.width = .75, color="black",alpha=1,show.legend = F)+
        #geom_boxplot(notch = FALSE,  outlier.size = -1, color="black",lwd=1, alpha = 0.4,show.legend = F)+
-       geom_point(data=num_mut_sum, aes(x=metal, y=avg_num), shape = 21,size=4,, fill="black",alpha=1)+
+       geom_point(data=num_mut_sum, aes(x=metal, y=avg_num), shape = 21,size=4, fill="black",alpha=1)+
        geom_errorbar(data=num_mut_sum, aes(x=metal, ymin=avg_num-sd_num, ymax=avg_num+sd_num), width=.2, inherit.aes = FALSE) +
        theme_bw()+
        ylab(c("log(Number) of mutations per evolved line"))  +
        xlab(c("Evolution environment"))  +
        #rremove("legend.title")+
        theme(#panel.border = element_rect(colour = "black", fill=NA, size=2),
-             axis.line = element_line(colour = "black",linewidth=1),
-             axis.ticks = element_line(linewidth=1,color="black"),
+             axis.line = element_line(colour = "black"),
+             axis.ticks = element_line(color="black"),
              axis.text = element_text(color="black"),
              axis.ticks.length=unit(0.2,"cm"),
              legend.position = "none")+
        guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
-ggsave("log_num_mutations.png")
+ggsave("figures/log_num_mutations.png")
 ```
 
