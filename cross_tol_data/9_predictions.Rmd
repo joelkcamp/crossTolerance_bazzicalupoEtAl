@@ -4,6 +4,7 @@ output: html_document
 date: '2023-06-06'
 ---
 ```{r setup, include=FALSE, echo = FALSE}
+#comment
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(viridis)
@@ -256,14 +257,14 @@ usgsmap=usgsvis %>%
 
 ```{r }
 p1=plot_grid(
-  orpmap, ct_orp, orplin, labels = c("A","B", "C"),
-  ncol = 3
+  orpmap, ct_orp, labels = c("A","B"),
+  ncol = 2
 )
-p2=plot_grid(propmap,ct_prop,  proplin, labels = c("D","E", "F"),
-  ncol = 3
+p2=plot_grid(propmap,ct_prop,  labels = c("C","D"),
+  ncol = 2
 )
-p3=plot_grid(usgsmap,ct_slope, usgslin, labels = c("G","H", "I"),
-  ncol = 3
+p3=plot_grid(usgsmap,ct_slope, labels = c("E","F"),
+  ncol = 2
 )
 
 plot_grid(p1, p2, p3, ncol = 1)
