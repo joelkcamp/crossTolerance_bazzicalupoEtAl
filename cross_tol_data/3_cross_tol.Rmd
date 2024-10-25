@@ -12,6 +12,8 @@ library(ggthemes)
 library(cowplot)
 library(dplyr)
 library(plyr)
+install.packages("wesanderson")
+library("wesanderson")
 ```
 
 Setting color palette
@@ -20,7 +22,9 @@ relfitPalette <- c("#787878", "#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF20
 relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
 relfitPaletteDark <- c("darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
 relfitPaletteBoth = c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF","darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
+pal <- wes_palette("Zissou1", 12, type = "continuous")
 
+zissou10 = c("#3A9AB2", "#72B2BF", "#95BBB1", "#ADC397", "#CAC96A", "#DFBF2B", "#E5A208", "#EA8005", "#EE5A03", "#F11B00")
 
 legend_title1 <- "Test\nEnvironment"
 legend_title2 <- "Evolution\nEnvironment"
@@ -359,12 +363,196 @@ profiles=plot_grid(cd_lines,co_lines,cu_lines,mn_lines,ni_lines,zn_lines,ncol = 
 
 ggsave("figures/profiles.jpeg", width=10, height=7, units = "in", dpi=700) #
 
-cross_tol=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),test_env_home + theme(legend.position = "none"),ncol = 1, align = "h", labels = c("", "G","H"), rel_heights = c(2,1,1)) # + theme(legend.position = "none")
-
-ggsave("figures/phenotypes1.jpeg", width=14, height=10, units = "in", dpi=700) # figure 2
 ```
 
-Calulating cross-tolerance between a pair of metals (X and Y) is the average ratio of growth in the non-evolved env’t to the evolved env’t.  That is, cross-tolerance would be:
+Looking by strain relative to home environmental
+
+```{r}
+
+
+E1cd_diff <- diff_relfit %>% 
+  filter(E1 == "Cd")
+
+E1co_diff <- diff_relfit %>% 
+  filter(E1 == "Co")
+
+E1cu_diff <- diff_relfit %>% 
+  filter(E1 == "Cu")
+
+E1mn_diff <- diff_relfit %>% 
+  filter(E1 == "Mn")
+
+E1ni_diff <- diff_relfit %>% 
+  filter(E1 == "Ni")
+
+E1zn_diff <- diff_relfit %>% 
+  filter(E1 == "Zn")
+```
+
+
+```{r}
+cd_lines_diff=E1cd_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain))  +
+  geom_path(color = "#FF9A17")+ 
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") + 
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+)
+#ggsave("cd_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+co_lines_diff=E1co_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#3B83FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("co_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+cu_lines_diff=E1cu_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#3EFF3B") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("cu_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+mn_lines_diff=E1mn_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#FD73FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("mn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+ni_lines_diff=E1ni_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#FFF200") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("ni_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+zn_lines_diff=E1zn_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#A880FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("zn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+```
+
+
+```{r}
+
+profiles_home=plot_grid(cd_lines_diff,co_lines_diff,cu_lines_diff,mn_lines_diff,ni_lines_diff,zn_lines_diff,ncol = 3, align = "v",labels = c("H","I","J","K", "L", "M"))
+
+ggsave("figures/profiles_home.jpeg", width=10, height=7, units = "in", dpi=700) #
+```
+
+```{r}
+
+#cross_tol=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),test_env_home + theme(legend.position = "none"),ncol = 1, align = "h", labels = c("", "G","H"), rel_heights = c(2,1,1)) # + theme(legend.position = "none")
+
+cross_tol1=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),profiles_home, ncol = 1, align = "h", labels = c("", "G",""), rel_heights = c(2,1,2))
+
+ggsave("figures/phenotypes1.jpeg", width=10, height=10, units = "in", dpi=700) # figure 2
+```
+
+Calulating narrow-scale cross-tolerance between a pair of metals (X and Y) is the average ratio of growth in the non-evolved env’t to the evolved env’t.  That is, cross-tolerance would be:
 
 CT(X,Y) = (r_Y|X/r_X|X + r_X|Y/r_Y|Y)/2
 
@@ -542,6 +730,281 @@ cross.tol.combos = cross.tol.combos %>%
 write_csv(cross.tol.combos, "mbm_intermediate_files/pairs_cross_tolerance.csv")
 
 ```
+
+Broad-scale cross-tolerance is calculated as the average relative performance of lines across all metals except their evolutionary environment X (CT(X))
+
+
+```{r}
+
+
+
+ct_x <- mydata6 %>% 
+  filter(E2!=".YPAD") %>% # remove measurements in YPAD
+  filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("strain"))
+
+write_csv(ct_x, "mbm_intermediate_files/broad_cross_tolerance.csv")
+
+
+```
+
+Add column with info about 9 genes with multiple SNPs
+
+```{r}
+
+ct_x$mutation = NA
+
+ct_x <- ct_x %>% 
+  mutate(mutation = case_when(strain == "mnbm_21" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_25" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_18" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_23" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_24" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_27" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_20" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_15" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_32" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_42" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_45" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_46" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_47" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_30" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_13" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_31" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_16" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_17" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_12" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_18" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_47" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_43" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_8" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_29" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_30" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_25" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_7" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_2" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_20" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_17" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_16" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_18" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_28" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_12" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_29" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_14" ~ "gene with ≥3 SNP mutations",
+                            strain == "nibm_14" ~ "gene with ≥3 SNP mutations",
+                            strain == "nibm_11" ~ "gene with ≥3 SNP mutations",
+                            strain == "nibm_9" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_11" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_38" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_42" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_1" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_37" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_45" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_46" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_29" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_41" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_17" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_21" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_7" ~ "gene with ≥3 SNP mutations",
+                            strain == "cubm_3" ~ "gene with ≥3 SNP mutations",
+                        )) 
+ct_x[is.na(ct_x)] <- "gene with <3 SNP mutations"
+
+ct_x_summ_mut <- ct_x %>% 
+  filter(mutation!="mutator") %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("mutation"))
+
+
+
+ct_x$gene = NA
+
+ct_x <- ct_x %>% 
+  mutate(gene = case_when(strain == "mnbm_21" ~ "CDC25",
+                            strain == "mnbm_25" ~ "CDC25",
+                            strain == "mnbm_18" ~ "CDC25",
+                            strain == "mnbm_23" ~ "CDC25",
+                            strain == "mnbm_24" ~ "CDC25",
+                            strain == "mnbm_27" ~ "CDC25",
+                            strain == "mnbm_20" ~ "CDC25",
+                            strain == "mnbm_15" ~ "CDC25",
+                            strain == "mnbm_32" ~ "CDC25",
+                            strain == "mnbm_42" ~ "YOR1",
+                            strain == "cdbm_45" ~ "HUL5",
+                            strain == "cdbm_46" ~ "HUL5",
+                            strain == "cdbm_47" ~ "HUL5",
+                            strain == "cdbm_30" ~ "HUL5",
+                            strain == "mnbm_13" ~ "MAM3",
+                            strain == "mnbm_31" ~ "MAM3",
+                            strain == "mnbm_16" ~ "MAM3",
+                            strain == "mnbm_17" ~ "MAM3",
+                            strain == "cobm_12" ~ "MAM3",
+                            strain == "cobm_18" ~ "MAM3",
+                            strain == "znbm_47" ~ "PTK2",
+                            strain == "znbm_43" ~ "PTK2",
+                            strain == "cobm_8" ~ "PTK2",
+                            strain == "cdbm_29" ~ "SFP1",
+                            strain == "cdbm_30" ~ "SFP1",
+                            strain == "cdbm_25" ~ "SFP1",
+                            strain == "cobm_7" ~ "SFP1",
+                            strain == "cobm_2" ~ "SIW14",
+                            strain == "cobm_20" ~ "SIW14",
+                            strain == "cobm_17" ~ "SIW14",
+                            strain == "cobm_16" ~ "SIW14",
+                            strain == "cobm_18" ~ "SIW14",
+                            strain == "mnbm_28" ~ "VCX1",
+                            strain == "mnbm_12" ~ "VCX1",
+                            strain == "mnbm_29" ~ "VCX1",
+                            strain == "mnbm_14" ~ "YOR1",
+                            strain == "nibm_14" ~ "PHO84",
+                            strain == "nibm_11" ~ "PHO84",
+                            strain == "nibm_9" ~ "PHO84",
+                            strain == "znbm_11" ~ "PHO84",
+                            strain == "znbm_38" ~ "PHO84",
+                            strain == "znbm_42" ~ "PHO84",
+                            strain == "cobm_1" ~ "PHO84",
+                            strain == "znbm_37" ~ "PMA1",
+                            strain == "znbm_45" ~ "PMA1",
+                            strain == "znbm_46" ~ "PMA1",
+                            strain == "znbm_29" ~ "PMA1",
+                            strain == "znbm_41" ~ "PMA1",
+                            strain == "znbm_17" ~ "PMA1",
+                            strain == "cobm_21" ~ "PMA1",
+                           strain == "cobm_7" ~ "PMA1", ## this is doubled in other gene
+                            strain == "cubm_3" ~ "PMA1",
+                          strain == "cobm_3" ~ "VTC4",
+                          strain == "cobm_2" ~ "VTC4",
+                          strain == "cobm_6" ~ "VTC4",
+                          strain == "cdbm_32" ~ "YOR1",
+                          
+                        )) 
+ct_x[is.na(ct_x)] <- "<3 SNP"
+
+ct_x_summ_gene <- ct_x %>% 
+  filter(mutation!="mutator") %>% 
+  filter(gene!="mutator") %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("gene"))
+
+
+
+
+ct_x %>%
+  na.omit() %>% 
+  filter(mutation!="mutator") %>% 
+  filter(gene!="mutator") %>% 
+  ggplot(aes(x=mutation,y=relfit1,fill=mutation)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=mutation)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=ct_x_summ_mut, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values=relfitPaletteDark) +
+    #scale_fill_manual(legend_title_none, limits = c("Non-petite (n = 70)", "Petite (n =38)"),labels = c("Grande (n = 70)", "Petite (n = 38)"), values=petitePalette2) +
+    labs(x="Mutations", y="Broad-scale cross-tolerance") +
+    theme_bw() +  geom_hline(yintercept=0, size=1)+
+    theme(legend.title=element_text(size=rel(0.75))) #+
+
+ggsave("figures/geneall3SNPs.jpeg", width=14, height=10, units = "in", dpi=700) #
+
+ct_x %>%
+  na.omit() %>% 
+  filter(mutation!="mutator") %>% 
+  filter(gene!="mutator") %>% 
+  ggplot(aes(x=gene,y=relfit1,fill=gene)) +
+    geom_point(alpha=0.2, size=1.5, position=position_dodge(width=0.75),aes(group=gene)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=8,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=ct_x_summ_gene, aes(ymin = relfit1 - se, ymax = relfit1 + se), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values = pal) +
+    labs(x="Mutations", y="Broad-scale cross-tolerance")+
+    theme(labs.title=element_text(size=rel(1.1))) +
+    theme_bw() +  geom_hline(yintercept=0, size=2)+
+    theme(axis.title=element_text(size=rel(2)))+
+    theme(axis.text=element_text(size=rel(1.75)))+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.1))+ theme(legend.position = "none")
+ggsave("figures/gene3SNPsSE.jpeg", width=9, height=7, units = "in", dpi=700) #
+
+
+ct_x %>%
+  na.omit() %>% 
+  filter(mutation!="mutator") %>% 
+  filter(gene!="mutator") %>% 
+  ggplot(aes(x=gene,y=relfit1,fill=gene)) +
+    geom_point(alpha=0.2, size=1, position=position_dodge(width=0.75),aes(group=gene)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=7,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=ct_x_summ_gene, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values = pal) +
+    labs(x="Mutations", y="Broad-scale cross-tolerance")+
+    theme(labs.title=element_text(size=rel(1.5)))+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    theme_bw() +  geom_hline(yintercept=0, size=2)+ theme(legend.position = "none") #+
+ggsave("figures/gene3SNPsCI.jpeg", width=13, height=10, units = "in", dpi=700) #
+
+ct_x_test = ct_x %>% 
+    filter(mutation!="mutator") 
+t.test(relfit1 ~ mutation, data = ct_x_test)
+
+ct_less3 = ct_x %>%
+  filter(gene==c("<3 SNP")) 
+
+ct_CDC25 = ct_x %>%
+  filter(gene==c("CDC25"))  %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_CDC25)
+
+ct_HUL5 = ct_x %>%
+  filter(gene==c("HUL5")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_HUL5)
+
+ct_MAM3 = ct_x %>%
+  filter(gene==c( "MAM3")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_MAM3)
+
+ct_PHO84 = ct_x %>%
+  filter(gene==c("PHO84")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_PHO84)
+
+ct_PMA1 = ct_x %>%
+  filter(gene==c("PMA1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_PMA1)
+
+ct_PTK2 = ct_x %>%
+  filter(gene==c("PTK2")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_PTK2)
+
+ct_SFP1 = ct_x %>%
+  filter(gene==c("SFP1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_SFP1)
+
+ct_SIW14 = ct_x %>%
+  filter(gene==c("SIW14")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_SIW14)
+
+ct_VCX1 = ct_x %>%
+  filter(gene==c("VCX1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_VCX1)
+
+ct_VTC4 = ct_x %>%
+  filter(gene==c("VTC4")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_VTC4)
+
+ct_YOR1 = ct_x %>%
+  filter(gene==c("YOR1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_YOR1)
+
+
+
+```
+
 
 
 ```{r}

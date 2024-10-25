@@ -1,0 +1,738 @@
+---
+title: "snpEff"
+output: html_document
+date: "2023-09-28"
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(dunn.test)
+library(ggbeeswarm)
+```
+```{r}
+snpsFinal <- read_tsv("snps/snpsFINAL_fixed.tsv")
+```
+AB: changed matal -> E1?
+```{r}
+snpsFinal %>% 
+  filter(CHROM!="chrM") %>%
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=variant, fill=E1)) + 
+  geom_bar() +
+  coord_flip() +
+  scale_x_discrete(limits=c("missense_variant", "frameshift_variant", "synonymous_variant", "stop_gained", "conservative_inframe_deletion", "frameshift_variant&stop_lost&splice_region_variant", "frameshift_variant&start_lost"))
+
+snpsFinal %>% 
+  filter(CHROM!="chrM") %>%
+  filter(evo_line=="MnBM42" | evo_line=="MnBM14" | evo_line=="MnBM32" | evo_line=="CdBM30") %>% 
+  ggplot(aes(x=evo_line, fill=variant)) +
+  geom_bar() +
+  coord_flip()
+
+snpsFinal %>% 
+  filter(CHROM!="chrM") %>%
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=E1, fill=variant)) +
+  geom_bar() +
+  coord_flip() +
+  scale_x_discrete(limits=c("Co","Mn","Cd","Zn","Cu","Ni"))
+
+snpsFinal %>% 
+  filter(CHROM!="chrM") %>%
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=E1, fill=effect)) +
+  geom_bar() +
+  coord_flip() +
+  scale_x_discrete(limits=c("Co","Mn","Cd","Zn","Cu","Ni"))
+
+snpsFinal %>% 
+  filter(CHROM!="chrM") %>%
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  ggplot(aes(x=effect, fill=effect)) +
+  geom_bar() +
+  coord_flip()+
+  scale_x_discrete(limits=c("HIGH", "MODERATE", "LOW", "MODIFIER"))
+
+snpsFinal %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  group_by(effect) %>% 
+  summarize(total=n())
+```
+
+```{r}
+process_long <- read.csv("GOterm_analysis/processPDB_long.csv") %>% select(!X) %>% filter(PROCESS_DESC!="process_component") %>% drop_na()
+function_long <- read.csv("GOterm_analysis/functionPDB_long.csv") %>% select(!X) %>% filter(FUNCTION_DESC!="function_component") %>% drop_na()
+component_long <- read.csv("GOterm_analysis/componentPDB_long.csv") %>% select(!X) %>% filter(COMPONENT_DESC!="cellular_component") %>% drop_na()
+
+snps_effect <- snpsFinal %>% 
+  left_join(process_long, by="GENE") %>% 
+  left_join(function_long, by="GENE") %>% 
+  left_join(component_long, by="GENE") %>% 
+  filter(CHROM!="chrM")
+snps_effect[] <- lapply(snps_effect, function(x) gsub("TRL 1", "TRL1", x))
+snps_effect[] <- lapply(snps_effect, function(x) gsub("BSD 2.00", "BSD2", x))
+```
+
+Calculating proportions of genes with different effects (LOW, MODERATE, HIGH)
+```{r}
+#currently this data is filtring out MnBM42 and MnBM14, but we can comment out these lines to include them if wanted
+snps_summary <- snpsFinal %>% 
+  filter(evo_line!="MnBM42" & evo_line!="MnBM14") %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="overall", category="overall")
+
+#COMPONENTS with FDR<0.05
+actin_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(COMPONENT_DESC=="actin filament") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+actin_summary <- actin_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="actin filament", category="cellular component")
+
+pole_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(COMPONENT_DESC=="site of polarized growth") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+pole_summary <- pole_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="site of polarized growth", category="cellular component")
+
+incipient_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(COMPONENT_DESC=="incipient cellular bud site") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+incipient_summary <- incipient_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="incipient cellular bud site", category="cellular component")
+
+budneck_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(COMPONENT_DESC=="cellular bud neck") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+budneck_summary <- budneck_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cellular bud neck", category="cellular component")
+
+vacuole_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(COMPONENT_DESC=="fungal-type vacuole membrane") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+vacuole_summary <- vacuole_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="fungal-type vacuole membrane", category="cellular component")
+
+periphery_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(COMPONENT_DESC=="cell periphery") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+periphery_summary <- periphery_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cell periphery", category="cellular component")
+
+membrane_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(COMPONENT_DESC=="plasma membrane") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+membrane_summary <- membrane_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="plasma membrane", category="cellular component")
+
+
+#FUNCTIONS with FDR<0.05
+binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+binding_summary <- binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="binding", category="molecular function")
+
+small_molecule_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="small molecule binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+small_molecule_binding_summary <- small_molecule_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="small molecule binding", category="molecular function")
+
+ion_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="ion binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+ion_binding_summary <- ion_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="ion binding", category="molecular function")
+
+anion_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="anion binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+anion_binding_summary <- anion_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="anion binding", category="molecular function")
+
+ATP_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="ATP binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+ATP_binding_summary <- ATP_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="ATP binding", category="molecular function")
+
+heterocyclic_compound_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="heterocyclic compound binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+heterocyclic_compound_binding_summary <- heterocyclic_compound_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="heterocyclic compound binding", category="molecular function")
+
+nucleoside_phosphate_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="nucleoside phosphate binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+nucleoside_phosphate_binding_summary <- nucleoside_phosphate_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="nucleoside phosphate binding", category="molecular function")
+
+nucleotide_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="nucleotide binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+nucleotide_binding_summary <- nucleotide_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="nucleotide binding", category="molecular function")
+
+adenyl_nucleotide_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="adenyl nucleotide binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+adenyl_nucleotide_binding_summary <- adenyl_nucleotide_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="adenyl nucleotide binding", category="molecular function")
+
+adenyl_ribonucleotide_binding_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="adenyl ribonucleotide binding") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+adenyl_ribonucleotide_binding_summary <- adenyl_ribonucleotide_binding_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="adenyl ribonucleotide binding", category="molecular function")
+
+catalytic_activity_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="catalytic activity") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+catalytic_activity_summary <- catalytic_activity_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="catalytic activity", category="molecular function")
+
+phosphotransferase_activity_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="phosphotransferase activity, alcohol group as acceptor") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+phosphotransferase_activity_summary <- phosphotransferase_activity_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="phosphotransferase activity, alcohol group as acceptor", category="molecular function")
+
+kinase_activity_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="kinase activity") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+kinase_activity_summary <- kinase_activity_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="kinase activity", category="molecular function")
+
+protein_serine_kinase_activity_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(FUNCTION_DESC=="protein serine kinase activity") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+protein_serine_kinase_activity_summary <- protein_serine_kinase_activity_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="protein serine kinase activity", category="molecular function")
+
+
+#PROCESSES with FDR<0.05
+biological_regulation_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="biological regulation") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+biological_regulation_summary <- biological_regulation_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="biological regulation", category="biological process")
+
+regulation_of_biological_process_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="regulation of biological process") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+regulation_of_biological_process_summary <- regulation_of_biological_process_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="regulation of biological process", category="biological process")
+
+response_to_stimulus_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="response to stimulus") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+response_to_stimulus_summary <- response_to_stimulus_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="response to stimulus", category="biological process")
+
+cellular_response_to_stimulus_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="cellular response to stimulus") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+cellular_response_to_stimulus_summary <- cellular_response_to_stimulus_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cellular response to stimulus", category="biological process")
+
+cellular_process_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="cellular process") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+cellular_process_summary <- cellular_process_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cellular process", category="biological process")
+
+cytokinesis_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="cytokinesis") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+cytokinesis_summary <- cytokinesis_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cytokinesis", category="biological process")
+
+cytokinetic_process_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="cytokinetic process") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+cytokinetic_process_summary <- cytokinetic_process_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cytokinetic process", category="biological process")
+
+phosphorylation_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="phosphorylation") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+phosphorylation_summary <- phosphorylation_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="phosphorylation", category="biological process")
+
+cellular_component_organization_or_biogenesis_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="cellular component organization or biogenesis") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+cellular_component_organization_or_biogenesis_summary <- cellular_component_organization_or_biogenesis_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cellular component organization or biogenesis", category="biological process")
+
+cellular_component_organization_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="cellular component organization") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+cellular_component_organization_summary <- cellular_component_organization_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="cellular component organization", category="biological process")
+
+protein_polyubiquitination_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="protein polyubiquitination") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+protein_polyubiquitination_summary <- protein_polyubiquitination_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="protein polyubiquitination", category="biological process")
+
+developmental_process_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="developmental process") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+developmental_process_summary <- developmental_process_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="developmental process", category="biological process")
+
+sporulation_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="sporulation") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+sporulation_summary <- sporulation_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="sporulation", category="biological process")
+
+anatomical_structure_morphogenesis_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="anatomical structure morphogenesis") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+anatomical_structure_morphogenesis_summary <- anatomical_structure_morphogenesis_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="anatomical structure morphogenesis", category="biological process")
+
+anatomical_structure_formation_involved_in_morphogenesis_snps <- snps_effect %>% 
+  filter(evo_line!="MnBM42"&evo_line!="MnBM14") %>% 
+  filter(PROCESS_DESC=="anatomical structure formation involved in morphogenesis") %>% 
+  filter(!duplicated(.[c("CHROM", "POS", "evo_line")]))
+anatomical_structure_formation_involved_in_morphogenesis_summary <- anatomical_structure_formation_involved_in_morphogenesis_snps %>% 
+  group_by(effect) %>% 
+  summarize(count=n()) %>% 
+  mutate(prop=count/sum(count),
+         total_genes=sum(count)) %>% 
+  mutate(term="anatomical structure formation involved in morphogenesis", category="biological process")
+```
+
+Finding redundant terms to exclude where more than 90% of their genes overlap with another
+```{r}
+#COMPONENT
+#cell periphery and plasma membrane - CONFIRMED - remove cell periphery - 100% genes shared
+periphery_snps_unique <- periphery_snps %>% select(GENE) %>% distinct()
+nrow(periphery_snps_unique)
+membrane_snps_unique <- membrane_snps %>% select(GENE) %>% distinct()
+nrow(membrane_snps_unique)
+anti_join(periphery_snps_unique, membrane_snps_unique)
+
+#vacuole and plasma membrane - do nothing - though they have similar number, the genes do not overlap
+vacuole_snps_unique <- vacuole_snps %>% select(GENE) %>% distinct()
+nrow(vacuole_snps_unique)
+membrane_snps_unique <- membrane_snps %>% select(GENE) %>% distinct()
+nrow(membrane_snps_unique)
+anti_join(vacuole_snps_unique, membrane_snps_unique)
+
+#cellular bud neck and site of polarized growth - CONFIRMED - remove site of polarized growth - 100% genes shared
+budneck_snps_unique <- budneck_snps %>% select(GENE) %>% distinct()
+nrow(budneck_snps_unique)
+pole_snps_unique <- pole_snps %>% select(GENE) %>% distinct()
+nrow(pole_snps_unique)
+anti_join(budneck_snps_unique, pole_snps_unique)
+
+#incipient cellular bud site and site of polarized growth - do nothing - even though all terms from one are included in another, they do not reciprocally share 90%
+incipient_snps_unique <- incipient_snps %>% select(GENE) %>% distinct()
+nrow(incipient_snps_unique)
+pole_snps_unique <- pole_snps %>% select(GENE) %>% distinct()
+nrow(pole_snps_unique)
+anti_join(incipient_snps_unique, pole_snps_unique)
+
+#phosphotransferase acitivity and kinase activity - CONFIRMED - remove phosphotransferase activity - 100% genes shared
+phosphotransferase_activity_snps_unique <- phosphotransferase_activity_snps %>% select(GENE) %>% distinct()
+nrow(phosphotransferase_activity_snps_unique)
+kinase_activity_snps_unique <- kinase_activity_snps %>% select(GENE) %>% distinct()
+nrow(kinase_activity_snps_unique)
+anti_join(phosphotransferase_activity_snps_unique, kinase_activity_snps_unique)
+
+#protein serine kinase activity and kinase activity - do nothing - even though all terms from one are included in another, they do not reciprocally share 90%
+protein_serine_kinase_activity_snps_unique <- protein_serine_kinase_activity_snps %>% select(GENE) %>% distinct()
+nrow(protein_serine_kinase_activity_snps_unique)
+kinase_activity_snps_unique <- kinase_activity_snps %>% select(GENE) %>% distinct()
+nrow(kinase_activity_snps_unique)
+anti_join(protein_serine_kinase_activity_snps_unique, kinase_activity_snps_unique)
+
+#ion binding and small molecule binding - CONFIRMED - remove ion binding - 100% of genes shared
+ion_binding_snps_unique <- ion_binding_snps %>% select(GENE) %>% distinct()
+nrow(ion_binding_snps_unique)
+small_molecule_binding_snps_unique <- small_molecule_binding_snps %>% select(GENE) %>% distinct()
+nrow(small_molecule_binding_snps_unique)
+anti_join(ion_binding_snps_unique, small_molecule_binding_snps_unique)
+
+#anion and ion - keep both
+ion_binding_snps_unique <- ion_binding_snps %>% select(GENE) %>% distinct()
+nrow(ion_binding_snps_unique)
+anion_binding_snps_unique <- anion_binding_snps %>% select(GENE) %>% distinct()
+nrow(anion_binding_snps_unique)
+anti_join(ion_binding_snps_unique, anion_binding_snps_unique)
+
+#ATP binding and anion binding - share more than 90% - but keep both
+ATP_binding_snps_unique <- ATP_binding_snps %>% select(GENE) %>% distinct()
+nrow(ATP_binding_snps_unique)
+anion_binding_snps_unique <- anion_binding_snps %>% select(GENE) %>% distinct()
+nrow(anion_binding_snps_unique)
+anti_join(ATP_binding_snps_unique, anion_binding_snps_unique)
+
+#adenyl ribonucleotide and ATP - do nothing - even though all terms from one are included in another, they do not reciprocally share 90%
+ATP_binding_snps_unique <- ATP_binding_snps %>% select(GENE) %>% distinct()
+nrow(ATP_binding_snps_unique)
+adenyl_ribonucleotide_binding_snps_unique <- adenyl_ribonucleotide_binding_snps %>% select(GENE) %>% distinct()
+nrow(adenyl_ribonucleotide_binding_snps_unique)
+anti_join(ATP_binding_snps_unique, adenyl_ribonucleotide_binding_snps_unique)
+
+#adenyl ribonucleotide and adenyl nucleotide - CONFIRMED - remove adenyl ribonucleotide
+adenyl_nucleotide_binding_snps_unique <- adenyl_nucleotide_binding_snps %>% select(GENE) %>% distinct()
+nrow(adenyl_nucleotide_binding_snps_unique)
+adenyl_ribonucleotide_binding_snps_unique <- adenyl_ribonucleotide_binding_snps %>% select(GENE) %>% distinct()
+nrow(adenyl_ribonucleotide_binding_snps_unique)
+anti_join(adenyl_ribonucleotide_binding_snps_unique, adenyl_nucleotide_binding_snps_unique)
+
+#adenyl nucleotide and nucleotide - do nothing - even though all terms from one are included in another, they do not reciprocally share 90%
+adenyl_nucleotide_binding_snps_unique <- adenyl_nucleotide_binding_snps %>% select(GENE) %>% distinct()
+nrow(adenyl_nucleotide_binding_snps_unique)
+nucleotide_binding_snps_unique <- nucleotide_binding_snps %>% select(GENE) %>% distinct()
+nrow(nucleotide_binding_snps_unique)
+anti_join(adenyl_ribonucleotide_binding_snps_unique, nucleotide_binding_snps_unique)
+
+#nucleotide and nucleoside phosphate - CONFIRMED - remove nucleoside phosphate binding - 100% of genes shared
+nucleotide_binding_snps_unique <- nucleotide_binding_snps %>% select(GENE) %>% distinct()
+nrow(nucleotide_binding_snps_unique)
+nucleoside_phosphate_binding_snps_unique <- nucleoside_phosphate_binding_snps %>% select(GENE) %>% distinct()
+nrow(nucleoside_phosphate_binding_snps_unique)
+anti_join(nucleoside_phosphate_binding_snps_unique, nucleotide_binding_snps_unique)
+
+
+#sporulation and developmental process - keep both - even though all terms from one are included in another, they do not reciprocally share 90%
+sporulation_snps_unique <- sporulation_snps %>% select(GENE) %>% distinct()
+nrow(sporulation_snps_unique)
+developmental_process_snps_unique <- developmental_process_snps %>% select(GENE) %>% distinct()
+nrow(developmental_process_snps_unique)
+anti_join(sporulation_snps_unique, developmental_process_snps_unique)
+
+#anatomical and anatomical - CONFIRMED - remove long term - share 94% of genes
+anatomical_structure_morphogenesis_snps_unique <- anatomical_structure_morphogenesis_snps %>% select(GENE) %>% distinct()
+nrow(anatomical_structure_morphogenesis_snps_unique)
+anatomical_structure_formation_involved_in_morphogenesis_summary <- anatomical_structure_formation_involved_in_morphogenesis_snps %>% select(GENE) %>% distinct()
+nrow(anatomical_structure_formation_involved_in_morphogenesis_snps)
+anti_join(anatomical_structure_morphogenesis_snps_unique, anatomical_structure_formation_involved_in_morphogenesis_snps)
+
+#anatomical and developmental - keep both - even though all terms from one are included in another, they do not reciprocally share 90%
+anatomical_structure_morphogenesis_snps_unique <- anatomical_structure_morphogenesis_snps %>% select(GENE) %>% distinct()
+nrow(anatomical_structure_morphogenesis_snps_unique)
+developmental_process_snps_unique <- developmental_process_snps %>% select(GENE) %>% distinct()
+nrow(developmental_process_snps_unique)
+anti_join(developmental_process_snps_unique,anatomical_structure_morphogenesis_snps_unique)
+
+#cellular... and cellular... - keep both
+cellular_component_organization_or_biogenesis_snps_unique <- cellular_component_organization_or_biogenesis_snps %>% select(GENE) %>% distinct()
+nrow(cellular_component_organization_or_biogenesis_snps_unique)
+cellular_component_organization_snps_unique <- cellular_component_organization_snps %>% select(GENE) %>% distinct()
+nrow(cellular_component_organization_snps_unique)
+anti_join(cellular_component_organization_or_biogenesis_snps_unique, cellular_component_organization_snps_unique)
+
+#cytokinetic process and cytokinesis - CONFIRMED - remove cytokinesis - share 91% genes
+cytokinesis_snps_unique <- cytokinesis_snps %>% select(GENE) %>% distinct()
+nrow(cytokinesis_snps_unique)
+cytokinetic_process_snps_unique <- cytokinetic_process_snps %>% select(GENE) %>% distinct()
+nrow(cytokinetic_process_snps_unique)
+anti_join(cytokinesis_snps_unique, cytokinetic_process_snps_unique)
+
+#biological regulation and regulation of biological process - CONFIRMED - remove regulation of biological process
+biological_regulation_snps_unique <- biological_regulation_snps %>% select(GENE) %>% distinct()
+nrow(biological_regulation_snps_unique)
+regulation_of_biological_process_snps_unique <- regulation_of_biological_process_snps %>% select(GENE) %>% distinct()
+nrow(regulation_of_biological_process_snps_unique)
+anti_join(biological_regulation_snps_unique, regulation_of_biological_process_snps_unique)
+
+#response to stimulus and cellular response to stimulus - keep both
+response_to_stimulus_snps_unique <- response_to_stimulus_snps %>% select(GENE) %>% distinct()
+nrow(response_to_stimulus_snps_unique)
+cellular_response_to_stimulus_snps_unique <- cellular_response_to_stimulus_snps %>% select(GENE) %>% distinct()
+nrow(cellular_response_to_stimulus_snps_unique)
+anti_join(cellular_response_to_stimulus_snps_unique, response_to_stimulus_snps_unique)
+```
+
+
+```{r}
+effect_term_compare <- rbind(actin_summary, incipient_summary, budneck_summary, vacuole_summary, membrane_summary, binding_summary, small_molecule_binding_summary, anion_binding_summary, ATP_binding_summary, heterocyclic_compound_binding_summary, nucleotide_binding_summary, adenyl_nucleotide_binding_summary, catalytic_activity_summary, kinase_activity_summary, protein_serine_kinase_activity_summary, biological_regulation_summary, response_to_stimulus_summary, cellular_response_to_stimulus_summary, cytokinetic_process_summary, phosphorylation_summary, cellular_component_organization_or_biogenesis_summary, cellular_component_organization_summary, protein_polyubiquitination_summary, developmental_process_summary, sporulation_summary, anatomical_structure_morphogenesis_summary, snps_summary)
+effect_term_compare$effect <- factor(effect_term_compare$effect, levels=c("HIGH", "MODERATE", "LOW", "MODIFIER"))
+effect_term_compare$term <- factor(effect_term_compare$term, levels=c("actin filament", "incipient cellular bud site", "cellular bud neck", "fungal-type vacuole membrane", "plasma membrane", "binding", "small molecule binding", "anion binding", "ATP binding", "heterocyclic compound binding", "nucleotide binding", "adenyl nucleotide binding", "catalytic activity", "kinase activity", "protein serine kinase activity", "biological regulation", "response to stimulus", "cellular response to stimulus", "cytokinetic process", "phosphorylation", "cellular component organization or biogenesis", "cellular component organization", "protein polyubiquitination", "developmental process", "sporulation", "anatomical structure morphogenesis", "overall"))
+
+effect_term_compare %>% 
+  ggplot(aes(x=term, y=prop, fill=effect, width = ifelse(term == "overall", 1, 0.5))) +
+  geom_bar(stat="identity") +
+  annotate("text", x=1, y=1.05, label="5", size=2.8) +
+  annotate("text", x=2, y=1.05, label="9", size=2.8) +
+  annotate("text", x=3, y=1.05, label="24", size=2.8) +
+  annotate("text", x=4, y=1.05, label="105", size=2.8) +
+  annotate("text", x=5, y=1.05, label="87", size=2.8) +
+  annotate("text", x=6, y=1.05, label="186", size=2.8) +
+  annotate("text", x=7, y=1.05, label="125", size=2.8) +
+  annotate("text", x=8, y=1.05, label="74", size=2.8) +
+  annotate("text", x=9, y=1.05, label="71", size=2.8) +
+  annotate("text", x=10, y=1.05, label="60", size=2.8) +
+  annotate("text", x=11, y=1.05, label="71", size=2.8) +
+  annotate("text", x=12, y=1.05, label="62", size=2.8) +
+  annotate("text", x=13, y=1.05, label="138", size=2.8) +
+  annotate("text", x=14, y=1.05, label="31", size=2.8) +
+  annotate("text", x=15, y=1.05, label="20", size=2.8) +
+  annotate("text", x=16, y=1.05, label="124", size=2.8) +
+  annotate("text", x=17, y=1.05, label="84", size=2.8) +
+  annotate("text", x=18, y=1.05, label="113", size=2.8) +
+  annotate("text", x=19, y=1.05, label="10", size=2.8) +
+  annotate("text", x=20, y=1.05, label="20", size=2.8) +
+  annotate("text", x=21, y=1.05, label="142", size=2.8) +
+  annotate("text", x=22, y=1.05, label="113", size=2.8) +
+  annotate("text", x=23, y=1.05, label="13", size=2.8) +
+  annotate("text", x=24, y=1.05, label="20", size=2.8) +
+  annotate("text", x=25, y=1.05, label="16", size=2.8) +
+  annotate("text", x=26, y=1.05, label="17", size=2.8) +
+  annotate("text", x=27, y=1.05, label="293", size=2.8) +
+  scale_fill_manual(limits=c("MODIFIER", "LOW", "MODERATE", "HIGH"), labels = c("modifier", "silent", "missense", "nonsense/frameshift"), values=c("#ffd21f", "#5cd65c", "#33adff", "#ff6666"))+
+  coord_flip() +
+  labs(x="GO Term", y="Proportion") +
+  theme_bw()
+ggsave("GO_distr_of_effects_PDBupdate.png", width=7, height=5, units = "in", dpi=700)
+```
+
+#Goodness of Fit test for the above info
+```{r}
+# The expected values are the proportions of effect from the overall set of snps. The order is HIGH, LOW, MODERATE, MODIFIER. The values for each term are taken from *term*_summary dataframes
+
+expected <- c(0.26621160, 0.14675768, 0.55972696, 0.02730375)
+
+observed_actin <- c(1,0,3,1)
+observed_incipient <- c(1,3,5,0)
+observed_budneck <- c(5,4,14,1)
+observed_vacuole <- c(43,7,53,2)
+observed_membrane <- c(36,7,43,1)
+observed_binding <- c(43,34,108,3)
+observed_ion_binding <- c(30,20,73,2)
+observed_anion_binding <- c(15,11,46,2)
+observed_ATP_binding <- c(11,12,46,2)
+observed_heterocyclic_compound_binding <- c(11,8,39,2)
+observed_nucleotide_binding <- c(11,12,46,2)
+observed_adenyl_nucleotide_binding <- c(11,8,41,2)
+observed_catalytic_activity <- c(31,20,85,2)
+observed_kinase_activity <- c(11,6,14,0)
+observed_protein_serine_kinase_activity <- c(6,5,9,0)
+observed_biological_regulation <- c(27,20,76,1)
+observed_response_to_stimulus <- c(21,14,48,1)
+observed_cellular_response_to_stimulus <- c(21,20,71,1)
+observed_cytokinetic_process <- c(3,3,3,1)
+observed_phosphorylation <- c(6,5,9,0)
+observed_cellular_component_organization_or_biogenesis <- c(36,24,79,3)
+observed_cellular_component_organization <- c(21,20,71,1)
+observed_protein_polyubiquitination <- c(2,2,9,0)
+observed_developmental_process <- c(4,4,11,1)
+observed_sporulation <- c(3,4,8,1)
+observed_anatomical_structure_morphogenesis <- c(3,4,9,1)
+
+
+chisq.test(x=observed_actin, p=expected)
+chisq.test(x=observed_incipient, p=expected)
+chisq.test(x=observed_budneck, p=expected)
+chisq.test(x=observed_vacuole, p=expected)
+chisq.test(x=observed_membrane, p=expected)
+chisq.test(x=observed_binding, p=expected)
+chisq.test(x=observed_ion_binding, p=expected)
+chisq.test(x=observed_anion_binding, p=expected)
+chisq.test(x=observed_ATP_binding, p=expected)
+chisq.test(x=observed_heterocyclic_compound_binding, p=expected)
+chisq.test(x=observed_nucleotide_binding, p=expected)
+chisq.test(x=observed_adenyl_nucleotide_binding, p=expected)
+chisq.test(x=observed_catalytic_activity, p=expected)
+chisq.test(x=observed_kinase_activity, p=expected)
+chisq.test(x=observed_protein_serine_kinase_activity, p=expected)
+chisq.test(x=observed_biological_regulation, p=expected)
+chisq.test(x=observed_response_to_stimulus, p=expected)
+chisq.test(x=observed_cellular_response_to_stimulus, p=expected)
+chisq.test(x=observed_cytokinetic_process, p=expected)
+chisq.test(x=observed_phosphorylation, p=expected)
+chisq.test(x=observed_cellular_component_organization_or_biogenesis, p=expected)
+chisq.test(x=observed_cellular_component_organization, p=expected)
+chisq.test(x=observed_protein_polyubiquitination, p=expected)
+chisq.test(x=observed_developmental_process, p=expected)
+chisq.test(x=observed_sporulation, p=expected)
+chisq.test(x=observed_anatomical_structure_morphogenesis, p=expected)
+```

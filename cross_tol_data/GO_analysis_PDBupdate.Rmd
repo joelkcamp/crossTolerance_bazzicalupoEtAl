@@ -1,0 +1,277 @@
+---
+title: "8_GO_analysis_PDBupdate"
+output: html_document
+date: "2024-08-30"
+---
+```{r}
+library(tidyverse)
+library(forcats)
+library(readr)
+library(tidyr)
+library(dplyr)
+x = getwd()
+setwd(x)
+```
+Results from PANTHERdb "Functional Classification"
+genes taken from snps_FINAL (after removing data from MnBM14 and MnBM42) and uploaded to geneontology.org "GO Enrichment Analysis"
+unmapped terms: BUD19, TRT2, YDR269C, YFL021C-A, YLR198C
+```{r}
+#GO term annotations raw output
+all_genes_pdb <- read_tsv("GOterm_analysis/pantherGeneList_final.txt")
+```
+
+Wrangling data from pdb output
+```{r}
+# Split the FUNCTION column into multiple rows based on the semicolon delimiter
+# Separate the function descriptions and codes into two columns
+function_all <- all_genes_pdb %>%
+  dplyr::select(GENE, FUNCTION) %>% 
+  separate_rows(FUNCTION, sep = ";") %>%
+  mutate(FUNCTION_DESC = sub("\\(GO:\\d+\\)", "", FUNCTION),
+         CODE_mf = gsub(".*\\((GO:\\d+)\\).*", "\\1", FUNCTION)) %>%
+  dplyr::select(GENE, FUNCTION_DESC)
+
+# Split the PROCESS column into multiple rows based on the semicolon delimiter
+# Separate the process descriptions and codes into two columns
+process_all <- all_genes_pdb %>%
+  dplyr::select(GENE, PROCESS) %>% 
+  separate_rows(PROCESS, sep = ";") %>%
+  mutate(PROCESS_DESC = sub("\\(GO:\\d+\\)", "", PROCESS),
+         CODE_mf = gsub(".*\\((GO:\\d+)\\).*", "\\1", PROCESS)) %>%
+  dplyr::select(GENE, PROCESS_DESC)
+
+# Split the COMPONENT column into multiple rows based on the semicolon delimiter
+# Separate the component descriptions and codes into two columns
+component_all <- all_genes_pdb %>%
+  dplyr::select(GENE, COMPONENT) %>% 
+  separate_rows(COMPONENT, sep = ";") %>%
+  mutate(COMPONENT_DESC = sub("\\(GO:\\d+\\)", "", COMPONENT),
+         CODE_mf = gsub(".*\\((GO:\\d+)\\).*", "\\1", COMPONENT)) %>%
+  dplyr::select(GENE, COMPONENT_DESC)
+```
+
+The Over-representation test groups GO terms hierarchically by parent terms. The ouput from the GO term annotation above has mostly child terms, so I am adding parent terms (gene lists from clicking on parent-terms in over-representation test output page)
+```{r}
+#load in the parent term gene lists
+MF_protein_serine_kinase_activity <- read_tsv("pantherTerm_geneLists/MF_protein_serine_kinase_activity.txt") %>%
+  mutate(FUNCTION_DESC="protein serine kinase activity") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_phosphotransferase_activity <- read_tsv("pantherTerm_geneLists/MF_phosphotransferase_activity.txt") %>% 
+  mutate(FUNCTION_DESC="phosphotransferase activity, alcohol group as acceptor") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_nucleotide_binding <- read_tsv("pantherTerm_geneLists/MF_nucleotide_binding.txt") %>% 
+  mutate(FUNCTION_DESC="nucleotide binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_nucleoside_phosphate_binding <- read_tsv("pantherTerm_geneLists/MF_nucleoside_phosphate_binding.txt") %>% 
+  mutate(FUNCTION_DESC="nucleoside phosphate binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_kinase_activity <- read_tsv("pantherTerm_geneLists/MF_kinase_activity.txt") %>% 
+  mutate(FUNCTION_DESC="kinase activity") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_ion_binding <- read_tsv("pantherTerm_geneLists/MF_ion_binding.txt") %>% 
+  mutate(FUNCTION_DESC="ion binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_heterocyclic_compound_binding <- read_tsv("pantherTerm_geneLists/MF_heterocyclic_compound_binding.txt") %>% 
+  mutate(FUNCTION_DESC="heterocyclic compound binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_ATP_binding <- read_tsv("pantherTerm_geneLists/MF_ATP_binding.txt") %>% 
+  mutate(FUNCTION_DESC="ATP binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_binding <- read_tsv("pantherTerm_geneLists/MF_binding.txt") %>% 
+  mutate(FUNCTION_DESC="binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_anion_binding <- read_tsv("pantherTerm_geneLists/MF_anion_binding_fix.txt") %>% 
+  mutate(FUNCTION_DESC="anion binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_small_molecule_binding <- read_tsv("pantherTerm_geneLists/MF_small_molecule_binding.txt") %>% 
+  mutate(FUNCTION_DESC="small molecule binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_adenyl_nucleotide_binding <- read_tsv("pantherTerm_geneLists/MF_adenyl_nucleotide_binding.txt") %>% 
+  mutate(FUNCTION_DESC="adenyl nucleotide binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_adenyl_ribonucleotide_binding <- read_tsv("pantherTerm_geneLists/MF_adenyl_ribonucleotide_binding.txt") %>% 
+  mutate(FUNCTION_DESC="adenyl ribonucleotide binding") %>% 
+  select(GENE, FUNCTION_DESC)
+MF_catalytic_activity <- read_tsv("pantherTerm_geneLists/MF_catalytic_activity.txt") %>% 
+  mutate(FUNCTION_DESC="catalytic activity") %>% 
+  select(GENE, FUNCTION_DESC)
+CC_site_of_polarized_growth <- read_tsv("pantherTerm_geneLists/CC_site_of_polarized_growth.txt") %>% 
+  mutate(COMPONENT_DESC="site of polarized growth") %>% 
+  select(GENE, COMPONENT_DESC)
+CC_plasma_membrane <- read_tsv("pantherTerm_geneLists/CC_plasma_membrane.txt") %>% 
+  mutate(COMPONENT_DESC="plasma membrane") %>% 
+  select(GENE, COMPONENT_DESC)
+CC_fungal_type_vacuole_membrane <- read_tsv("pantherTerm_geneLists/CC_fungal-type_vacuole_membrane.txt") %>% 
+  mutate(COMPONENT_DESC="fungal-type vacuole membrane") %>% 
+  select(GENE, COMPONENT_DESC)
+CC_cellular_bud_neck <- read_tsv("pantherTerm_geneLists/CC_cellular_bud_neck.txt") %>% 
+  mutate(COMPONENT_DESC="cellular bud neck") %>% 
+  select(GENE, COMPONENT_DESC)
+CC_cell_periphery <- read_tsv("pantherTerm_geneLists/CC_cell_periphery.txt") %>% 
+  mutate(COMPONENT_DESC="cell periphery") %>% 
+  select(GENE, COMPONENT_DESC)
+CC_actin_filament <- read_tsv("pantherTerm_geneLists/CC_actin_filament.txt") %>% 
+  mutate(COMPONENT_DESC="actin filament") %>% 
+  select(GENE, COMPONENT_DESC)
+BP_sporulation <- read_tsv("pantherTerm_geneLists/BP_sporulation.txt") %>% 
+  mutate(PROCESS_DESC="sporulation") %>% 
+  select(GENE, PROCESS_DESC)
+BP_regulation_of_biological_process <- read_tsv("pantherTerm_geneLists/BP_regulation_of_biological_process.txt") %>% 
+  mutate(PROCESS_DESC="regulation of biological process") %>% 
+  select(GENE, PROCESS_DESC)
+BP_protein_polyubiquitination <- read_tsv("pantherTerm_geneLists/BP_protein_polyubiquitination_fix.txt") %>% 
+  mutate(PROCESS_DESC="protein polyubiquitination") %>% 
+  select(GENE, PROCESS_DESC)
+BP_phosphorylation <- read_tsv("pantherTerm_geneLists/BP_phosphorylation.txt") %>% 
+  mutate(PROCESS_DESC="phosphorylation") %>% 
+  select(GENE, PROCESS_DESC)
+BP_cytokinesis <- read_tsv("pantherTerm_geneLists/BP_cytokinesis.txt") %>% 
+  mutate(PROCESS_DESC="cytokinesis") %>% 
+  select(GENE, PROCESS_DESC)
+BP_cellular_response_to_stimulus <- read_tsv("pantherTerm_geneLists/BP_cellular_response_to_stimulus.txt") %>% 
+  mutate(PROCESS_DESC="cellular response to stimulus") %>% 
+  select(GENE, PROCESS_DESC)
+BP_cellular_component_organization <- read_tsv("pantherTerm_geneLists/BP_cellular_component_organization.txt") %>% 
+  mutate(PROCESS_DESC="cellular component organization") %>% 
+  select(GENE, PROCESS_DESC)
+BP_biological_regulation <- read_tsv("pantherTerm_geneLists/BP_biological_regulation.txt") %>% 
+  mutate(PROCESS_DESC="biological regulation") %>% 
+  select(GENE, PROCESS_DESC)
+BP_regulation_of_cellular_process <- read_tsv("pantherTerm_geneLists/BP_regulation_of_cellular_process.txt") %>%
+  mutate(PROCESS_DESC="regulation of cellular process") %>% 
+  select(GENE, PROCESS_DESC)
+BP_cellular_component_organization_or_biogenesis <- read_tsv("pantherTerm_geneLists/BP_cellular_component_organization_or_biogenesis.txt") %>% 
+  mutate(PROCESS_DESC="cellular component organization or biogenesis") %>% 
+  select(GENE, PROCESS_DESC)
+BP_developmental_process <- read_tsv("pantherTerm_geneLists/BP_developmental_process.txt") %>% 
+  mutate(PROCESS_DESC="developmental process") %>% 
+  select(GENE, PROCESS_DESC)
+BP_response_to_stimulus <- read_tsv("pantherTerm_geneLists/BP_response_to_stimulus.txt") %>% 
+  mutate(PROCESS_DESC="response to stimulus") %>% 
+  select(GENE, PROCESS_DESC)
+BP_anatomical_structure_morphogenesis <- read_tsv("pantherTerm_geneLists/BP_anatomical_structure_morphogenesis.txt") %>% 
+  mutate(PROCESS_DESC="anatomical structure morphogenesis") %>% 
+  select(GENE, PROCESS_DESC)
+BP_anatomical_structure_formation_involved_in_morphogenesis <- read_tsv("pantherTerm_geneLists/BP_anatomical_structure_formation_involved_in_morphogenesis.txt") %>% 
+  mutate(PROCESS_DESC="anatomical structure formation involved in morphogenesis") %>% 
+  select(GENE, PROCESS_DESC)
+BP_cellular_process <- read_tsv("pantherTerm_geneLists/BP_cellular_process.txt") %>% 
+  mutate(PROCESS_DESC="cellular process") %>% 
+  select(GENE, PROCESS_DESC)
+BP_cytokinetic_process <- read_tsv("pantherTerm_geneLists/BP_cytokinetic_process_fix.txt") %>% 
+  mutate(PROCESS_DESC="cytokinetic process") %>% 
+  select(GENE, PROCESS_DESC)
+```
+
+```{r}
+# join parent term lists to overall term lists and remove duplicates
+
+function_all_fixed <- function_all %>% 
+  rbind(MF_protein_serine_kinase_activity,
+        MF_phosphotransferase_activity,
+        MF_nucleotide_binding,
+        MF_nucleoside_phosphate_binding,
+        MF_kinase_activity,
+        MF_ion_binding,
+        MF_heterocyclic_compound_binding,
+        MF_ATP_binding,
+        MF_catalytic_activity,
+        MF_binding,
+        MF_small_molecule_binding,
+        MF_anion_binding,
+        MF_adenyl_nucleotide_binding,
+        MF_adenyl_ribonucleotide_binding) %>% 
+  distinct()
+function_all_fixed %>% write.csv("GOterm_analysis/functionPDB_long.csv")
+
+process_all_fixed <- process_all %>% 
+  rbind(BP_sporulation, 
+        BP_regulation_of_biological_process, 
+        BP_protein_polyubiquitination, 
+        BP_phosphorylation, 
+        BP_cytokinesis, 
+        BP_cellular_response_to_stimulus, 
+        BP_cellular_component_organization,
+        BP_biological_regulation,
+        BP_regulation_of_cellular_process,
+        BP_cellular_component_organization_or_biogenesis,
+        BP_developmental_process,
+        BP_response_to_stimulus,
+        BP_anatomical_structure_morphogenesis,
+        BP_anatomical_structure_formation_involved_in_morphogenesis,
+        BP_cellular_process,
+        BP_cytokinetic_process) %>% 
+  distinct()
+process_all_fixed %>% write.csv("GOterm_analysis/processPDB_long.csv")
+
+component_all_fixed <- component_all %>% 
+  rbind(CC_site_of_polarized_growth,
+        CC_plasma_membrane,
+        CC_fungal_type_vacuole_membrane,
+        CC_cellular_bud_neck,
+        CC_cell_periphery,
+        CC_actin_filament) %>% 
+  distinct()
+component_all_fixed %>% write.csv("GOterm_analysis/componentPDB_long.csv")
+```
+
+Loading in overrepresentation test results to get color gradient for FDR 0-0.05
+The files being read in here are overrepresentation output from pantherdb.org
+```{r}
+overrep_function_pdb <- read_tsv("GOterm_analysis/all_function_Overrepresentation.txt") %>% 
+  mutate(FUNCTION_DESC = sub(" \\(GO:\\d+\\)", "", FUNCTION),
+         CODE_mf = gsub(".*\\((GO:\\d+)\\).*", "\\1", FUNCTION)) %>%
+  select(-c(FUNCTION, `over under`, foldEnrichment))
+overrep_function_pdb %>% filter(pval<0.001) %>% write.csv("GOterm_analysis/overrep_p001_function.csv")
+
+overrep_process_pdb <- read_tsv("GOterm_analysis/all_process_Overrepresenation.txt") %>% 
+  mutate(PROCESS_DESC = sub(" \\(GO:\\d+\\)", "", PROCESS),
+         CODE_mf = gsub(".*\\((GO:\\d+)\\).*", "\\1", PROCESS)) %>% 
+  select(-c(PROCESS, `upload_1 (over/under)`, `upload_1 (fold Enrichment)`))
+overrep_process_pdb %>% filter(pval<0.001) %>% write.csv("GOterm_analysis/overrep_p001_process.csv")
+
+overrep_component_pdb <- read_tsv("GOterm_analysis/all_component_Overrepresenation.txt") %>% 
+  mutate(COMPONENT_DESC = sub(" \\(GO:\\d+\\)", "", COMPONENT),
+         CODE_mf = gsub(".*\\((GO:\\d+)\\).*", "\\1", COMPONENT)) %>% 
+  select(-c(COMPONENT, `upload_1 (over/under)`, `upload_1 (fold Enrichment)`))
+overrep_component_pdb %>% filter(pval<0.001) %>% write.csv("GOterm_analysis/overrep_p001_component.csv")
+```
+
+getting colors for FDR representation in tree
+```{r}
+overrep_function_pdb %>% 
+  select(FUNCTION_DESC, List_num, expected, pval, FDR) %>% 
+  distinct() %>% 
+  filter(FDR<0.05) %>% 
+  ggplot(aes(FUNCTION_DESC, pval, color=FDR, size=List_num)) +
+  geom_abline(slope=1, intercept = 0) +
+  geom_jitter(position = position_dodge(width=0.5)) +
+  scale_color_gradient(low="goldenrod3", high="lemonchiffon") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("GOterm_analysis/figures/tree_colors_function.png")
+
+overrep_process_pdb %>% 
+  select(PROCESS_DESC, List_num, expected, pval, FDR) %>% 
+  distinct() %>% 
+  filter(FDR<0.05) %>% 
+  ggplot(aes(PROCESS_DESC, pval, color=FDR, size=List_num)) +
+  geom_abline(slope=1, intercept = 0) +
+  geom_jitter(position = position_dodge(width=0.5)) +
+  scale_color_gradient(low="magenta4", high="#ffe8fe") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("GOterm_analysis/figures/tree_colors_process.png")
+
+overrep_component_pdb %>% 
+  select(COMPONENT_DESC, List_num, expected, pval, FDR) %>% 
+  distinct() %>% 
+  filter(FDR<0.05) %>% 
+  ggplot(aes(COMPONENT_DESC, pval, color=FDR, size=List_num)) +
+  geom_abline(slope=1, intercept = 0) +
+  geom_jitter(position = position_dodge(width=0.5)) +
+  scale_color_gradient(low="darkcyan", high="lightcyan") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("GOterm_analysis/figures/tree_colors_component.png")
+```

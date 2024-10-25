@@ -188,30 +188,30 @@ mbm_rf = mydata6
 mbm_rf$ploidy = NA
 
 mbm_rf <- mbm_rf %>% 
-  mutate(ploidy = case_when(strain == "cdbm_37" ~ ">N",
-                        strain == "cdbm_39" ~ ">N",
-                        strain == "cubm_43" ~ ">N",
-                        strain == "cubm_44" ~ ">N",
-                        strain == "cubm_45" ~ ">N",
-                        strain == "cobm_2" ~ ">N",
-                        strain == "mnbm_14" ~ ">N",
-                        strain == "mnbm_39" ~ ">N",
-                        strain == "nibm_6" ~ ">N",
-                        strain == "nibm_8" ~ ">N",
-                        strain == "nibm_12" ~ ">N",
-                        strain == "nibm_14" ~ ">N",
-                        strain == "nibm_16" ~ ">N",
-                        strain == "nibm_29" ~ ">N",
-                        strain == "znbm_19" ~ ">N",
-                        strain == "znbm_23" ~ ">N",
-                        strain == "znbm_29" ~ ">N",
-                        strain == "znbm_38" ~ ">N",
-                        strain == "znbm_39" ~ ">N",
-                        strain == "znbm_41" ~ ">N",
-                        strain == "znbm_43" ~ ">N",
-                        strain == "znbm_47" ~ ">N",
+  mutate(ploidy = case_when(strain == "cdbm_37" ~ "aneuploid",
+                        strain == "cdbm_39" ~ "aneuploid",
+                        strain == "cubm_43" ~ "aneuploid",
+                        strain == "cubm_44" ~ "aneuploid",
+                        strain == "cubm_45" ~ "aneuploid",
+                        strain == "cobm_2" ~ "aneuploid",
+                        strain == "mnbm_14" ~ "aneuploid",
+                        strain == "mnbm_39" ~ "aneuploid",
+                        strain == "nibm_6" ~ "aneuploid",
+                        strain == "nibm_8" ~ "aneuploid",
+                        strain == "nibm_12" ~ "aneuploid",
+                        strain == "nibm_14" ~ "aneuploid",
+                        strain == "nibm_16" ~ "aneuploid",
+                        strain == "nibm_29" ~ "aneuploid",
+                        strain == "znbm_19" ~ "aneuploid",
+                        strain == "znbm_23" ~ "aneuploid",
+                        strain == "znbm_29" ~ "aneuploid",
+                        strain == "znbm_38" ~ "aneuploid",
+                        strain == "znbm_39" ~ "aneuploid",
+                        strain == "znbm_41" ~ "aneuploid",
+                        strain == "znbm_43" ~ "aneuploid",
+                        strain == "znbm_47" ~ "aneuploid",
                         )) 
-mbm_rf[is.na(mbm_rf)] <- "N"
+mbm_rf[is.na(mbm_rf)] <- "euploid"
 
 mbm_summary1 <- mbm_rf %>% 
   Rmisc::summarySE(measurevar = "relfit1", groupvars = c( "E2", "ploidy"))
@@ -241,18 +241,18 @@ colnames(cbm_rf) <- c('strain','E2','avg_slope','anc_slope','relfit1')
 cbm_rf$ploidy = NA
 
 cbm_rf <- cbm_rf %>% 
-  mutate(ploidy = case_when(strain == "CBM7" ~ ">N",
-                        strain == "CBM29" ~ ">N",
-                        strain == "CBM22" ~ ">N",
-                        strain == "CBM21" ~ ">N",
-                        strain == "CBM26" ~ ">N",
-                        strain == "CBM2" ~ ">N",
-                        strain == "CBM3" ~ ">N",
-                        strain == "CBM11" ~ ">N",
-                        strain == "CBM30" ~ ">N",
-                        strain == "CBM20" ~ ">N",
+  mutate(ploidy = case_when(strain == "CBM7" ~ "aneuploid",
+                        strain == "CBM29" ~ "aneuploid",
+                        strain == "CBM22" ~ "aneuploid",
+                        strain == "CBM21" ~ "aneuploid",
+                        strain == "CBM26" ~ "aneuploid",
+                        strain == "CBM2" ~ "aneuploid",
+                        strain == "CBM3" ~ "aneuploid",
+                        strain == "CBM11" ~ "aneuploid",
+                        strain == "CBM30" ~ "aneuploid",
+                        strain == "CBM20" ~ "aneuploid",
                         )) 
-cbm_rf[is.na(cbm_rf)] <- "N"
+cbm_rf[is.na(cbm_rf)] <- "euploid"
 
 cbm_summary1 <- cbm_rf %>% 
   #filter(E2!=".YPAD") %>% 
