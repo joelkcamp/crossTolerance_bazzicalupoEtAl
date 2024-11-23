@@ -1,0 +1,490 @@
+---
+title: "8_GO_analysis_PDBupdate"
+output: html_document
+date: "2024-08-30"
+---
+```{r}
+library(tidyverse)
+library(forcats)
+library(readr)
+library(tidyr)
+library(dplyr)
+x = getwd()
+setwd(x)
+options(scipen = 999)
+```
+Results from SGD GO Term Finder
+```{r}
+SGD_process <- read_tsv("SGD_process_18Nov2024.tsv")
+SGD_process$ANNOTATED_GENES <- gsub("YKR103W", "NFT1", SGD_process$ANNOTATED_GENES)
+SGD_process$ANNOTATED_GENES <- gsub("YFL021W", "GAT1", SGD_process$ANNOTATED_GENES)
+SGD_function <- read_tsv("SGD_function_18Nov2024.tsv")
+SGD_function$ANNOTATED_GENES <- gsub("YKR103W", "NFT1", SGD_function$ANNOTATED_GENES)
+SGD_function$ANNOTATED_GENES <- gsub("YFL021W", "GAT1", SGD_function$ANNOTATED_GENES)
+SGD_component <- read_tsv("SGD_component_18Nov2024.tsv")
+SGD_component$ANNOTATED_GENES <- gsub("YKR103W", "NFT1", SGD_component$ANNOTATED_GENES)
+SGD_component$ANNOTATED_GENES <- gsub("YFL021W", "GAT1", SGD_component$ANNOTATED_GENES)
+```
+Getting lists of genes mapped to each term
+```{r}
+#Processses
+SGD_process$TERM
+cellular_process <- SGD_process %>% filter(TERM=="cellular process") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+cellular_component_organization <- SGD_process %>% filter(TERM=="cellular component organization") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+cellular_response_to_stimulus <- SGD_process %>% filter(TERM=="cellular response to stimulus") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+response_to_stimulus <- SGD_process %>% filter(TERM=="response to stimulus") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+biological_regulation <- SGD_process %>% filter(TERM=="biological regulation") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+cellular_component_organization_or_biogenesis <- SGD_process %>% filter(TERM=="cellular component organization or biogenesis") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+regulation_of_cellular_process <- SGD_process %>% filter(TERM=="regulation of cellular process") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+regulation_of_biological_process <- SGD_process %>% filter(TERM=="regulation of biological process") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+cytokinetic_process <- SGD_process %>% filter(TERM=="cytokinetic process") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+polyphosphate_biosynthetic_process <- SGD_process %>% filter(TERM=="polyphosphate biosynthetic process") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+
+#Functions
+SGD_function$TERM
+phosphotransferase_activity <- SGD_function %>% filter(TERM=="phosphotransferase activity, alcohol group as acceptor") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+kinase_activity <- SGD_function %>% filter(TERM=="kinase activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+transferase_activity<- SGD_function %>% filter(TERM=="transferase activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+catalytic_activity <- SGD_function %>% filter(TERM=="catalytic activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+protein_kinase_activity <- SGD_function %>% filter(TERM=="protein kinase activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+ubiquitin_protein_transferase_activity <- SGD_function %>% filter(TERM=="ubiquitin-protein transferase activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+ATP_dependent_activity <- SGD_function %>% filter(TERM=="ATP-dependent activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+catalytic_activity_acting_on_a_protein <- SGD_function %>% filter(TERM=="catalytic activity, acting on a protein") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+MAP_kinase_scaffold_activity <- SGD_function %>% filter(TERM=="MAP-kinase scaffold activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+ubiquitin_ubiquitin_ligase_activity <- SGD_function %>% filter(TERM=="ubiquitin-ubiquitin ligase activity") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+
+#Components
+SGD_component$TERM
+cellular_anatomical_structure <- SGD_component %>% filter(TERM=="cellular anatomical structure") %>% select(ANNOTATED_GENES) %>%
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+intracellular_anatomical_structure <- SGD_component %>% filter(TERM=="intracellular anatomical structure") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+intracellular_organelle <- SGD_component %>% filter(TERM=="intracellular organelle") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+organelle <- SGD_component %>% filter(TERM=="organelle") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+fungal_type_vacuole_membrane <- SGD_component %>% filter(TERM=="fungal-type vacuole membrane") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+lytic_vacuole_membrane <- SGD_component %>% filter(TERM=="lytic vacuole membrane") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+intracellular_membrane_bounded_organelle <- SGD_component %>% filter(TERM=="intracellular membrane-bounded organelle") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+membrane_bounded_organelle <- SGD_component %>% filter(TERM=="membrane-bounded organelle") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+incipient_cellular_bud_site <- SGD_component %>% filter(TERM=="incipient cellular bud site") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+vacuolar_membrane <- SGD_component %>% filter(TERM=="vacuolar membrane") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+cytoplasm <- SGD_component %>% filter(TERM=="cytoplasm") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+vacuolar_transporter_chaperone_complex <- SGD_component %>% filter(TERM=="vacuolar transporter chaperone complex") %>% select(ANNOTATED_GENES) %>% 
+  separate_rows(ANNOTATED_GENES, sep = ",") %>% mutate(ANNOTATED_GENES = gsub(' ', '', ANNOTATED_GENES))
+```
+
+Checking for redundant terms
+If there is greater than 90% overlap in gene lists, then keep the term with the lower pvalue
+```{r}
+# PROCESS
+### TEST: regulation_of_cellular_process and regulation_of_biological_process (69 genes)
+inner_join(regulation_of_cellular_process, regulation_of_biological_process) %>% nrow()
+### RESULT: 69/69=100% overlap in genes, keep "regulation of cellular process", remove "regulation of biological process"
+
+### TEST: cellular_response_to_stimulus and response_to_stimulus (56 and 59 genes)
+inner_join(cellular_response_to_stimulus, response_to_stimulus) %>% nrow()
+### RESULT: 56/59=95% overlap in genes, keep "cellular response to stimulus", remove "response to stimulus"
+
+### TEST: cellular_component_organization and cellular_component_organization_or_biogenesis (83 and 92 genes)
+inner_join(cellular_component_organization, cellular_component_organization_or_biogenesis) %>% nrow()
+### RESULT: 83/92=90.2% overlap in genes, keep "cellular component organization", remove "cellular component organization or biogenesis"
+
+
+
+# FUNCTION
+### TEST: phosphotransferase_activity and kinase_activity (18 genes)
+inner_join(phosphotransferase_activity, kinase_activity) %>% nrow()
+### RESULT: 17/18=94% overlap in genes, keep "phosphotransferase activity, alcohol group as acceptor", remove "kinase activity"
+
+
+
+# COMPONENT
+### TEST: intracellular_anatomical_structure and cellular_anatomical_structure (185 and 193 genes)
+inner_join(intracellular_anatomical_structure, cellular_anatomical_structure) %>% nrow()
+### RESULT: 185/193=96% overlap in genes, keep "cellular anatomical structure, remove "intracellular anatomical structure"
+
+### TEST: intracellular_organelle and organelle (163 genes)
+inner_join(intracellular_organelle, organelle) %>% nrow()
+### RESULT: 163/163=100% overlap in genes, keep "intracellular organelle", remove "organelle"
+
+### TEST: intracellular_membrane_bounded_organelle and membrane_bounded_organelle (150 genes)
+inner_join(intracellular_membrane_bounded_organelle, membrane_bounded_organelle) %>% nrow()
+### RESULT: 150/150=100% overlap in genes, keep "intracellular membrane-bounded organelle", remove "membrane-bounded organelle"
+
+### TEST: intracellular_organelle and intracellular_membrane_bounded_organelle (163 and 150 genes)
+inner_join(intracellular_organelle, intracellular_membrane_bounded_organelle) %>% nrow()
+### RESULT: 150/163=92% overlap in genes, keep "intracellular membrane-bounded organelle", remove "intracellular organelle"
+
+### TEST: fungal_type_vacuole_membrane and lytic_vacuole_membrane (18 genes)
+inner_join(fungal_type_vacuole_membrane, lytic_vacuole_membrane) %>% nrow()
+### RESULT: 18/18=100% gene overlap, keep "fungal-type vacuole membrane", remove "lytic vacuole membrane"
+
+### TEST: fungal_type_vacuole_membrane and vacuolar_membrane (18 genes)
+inner_join(fungal_type_vacuole_membrane, vacuolar_membrane) %>% nrow()
+### RESULT: 18/18=100% gene overlap, keep "fungal-type vacuole membrane", remove "vacuolar membrane"
+```
+
+
+getting colors for FDR representation in tree
+```{r}
+SGD_function %>% 
+  select(TERM, CORRECTED_PVALUE, NUM_LIST_ANNOTATIONS, EXPECTED_FALSE_POSITIVES) %>% 
+  ggplot(aes(fct_reorder(TERM, -NUM_LIST_ANNOTATIONS), CORRECTED_PVALUE, color=CORRECTED_PVALUE)) +
+  geom_point(size=7) +
+  scale_color_gradient(low="goldenrod3", high="lemonchiffon", limits=c(0,0.05)) +
+  labs(color='pval', y="pval", x="term") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("11Nov2024_tree_colors_function.png", height=7, width=6, units = "in")
+
+SGD_process %>% 
+  select(TERM, CORRECTED_PVALUE, NUM_LIST_ANNOTATIONS, EXPECTED_FALSE_POSITIVES) %>% 
+  ggplot(aes(fct_reorder(TERM, -NUM_LIST_ANNOTATIONS), CORRECTED_PVALUE, color=CORRECTED_PVALUE)) +
+  geom_point(size=7) +
+  scale_color_gradient(low="magenta4", high="#ffe8fe", limits=c(0,0.05)) +
+  labs(color='pval', y="pval", x="term") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("11Nov2024_tree_colors_process.png", height=7, width=6, units = "in")
+
+SGD_component %>% 
+  select(TERM, CORRECTED_PVALUE, NUM_LIST_ANNOTATIONS, EXPECTED_FALSE_POSITIVES) %>% 
+  ggplot(aes(fct_reorder(TERM, -NUM_LIST_ANNOTATIONS), CORRECTED_PVALUE, color=CORRECTED_PVALUE)) +
+  geom_point(size=7) +
+  scale_color_gradient(low="darkcyan", high="lightcyan", limits=c(0,0.05)) +
+  labs(color='pval', y="pval", x="term") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
+ggsave("11Nov2024_tree_colors_component.png", height=7, width=6, units = "in")
+```
+
+-------------------------------------------------------------------------------------------------
+
+read in final mutations from Sally's mathematica output
+```{r}
+filtered_mutations <- read.csv("final_snps_18Nov2024.csv") #this is filtered_mutations from 7_snp_analysis_4Nov2024.Rmd
+
+filtered_mutations$gene <- gsub("YKR103W", "NFT1", filtered_mutations$gene)
+filtered_mutations$gene <- gsub("YFL021W", "GAT1", filtered_mutations$gene)
+```
+
+#distribution of effects figure
+```{r}
+#significant terms joining to mutation information
+
+#PROCESS
+cellular_process_effect <- cellular_process %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="cellular process")
+cellular_component_organization_effect <- cellular_component_organization %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="cellular component organization")
+cellular_response_to_stimulus_effect <- cellular_response_to_stimulus %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="cellular response to stimulus")
+biological_regulation_effect <- biological_regulation %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="biological regulation")
+regulation_of_cellular_process_effect <- regulation_of_cellular_process %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="regulation of cellular process")
+cytokinetic_process_effect <- cytokinetic_process %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="cytokinetic process")
+polyphosphate_biosynthetic_process_effect <- polyphosphate_biosynthetic_process %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="polyphosphate biosynthetic process")
+
+#FUNCTION
+phosphotransferase_activity_effect <- phosphotransferase_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="phosphotransferase activity, alcohol group as acceptor")
+transferase_activity_effect <- transferase_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="transferase activity")
+catalytic_activity_effect <- catalytic_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="catalytic activity")
+protein_kinase_activity_effect <- protein_kinase_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="protein kinase activity")
+ubiquitin_protein_transferase_activity_effect <- ubiquitin_protein_transferase_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="ubiquitin-protein transferase activity")
+ATP_dependent_activity_effect <- ATP_dependent_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="ATP-dependent activity")
+catalytic_activity_acting_on_a_protein_effect <- catalytic_activity_acting_on_a_protein %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="catalytic activity, acting on a protein")
+MAP_kinase_scaffold_activity_effect <- MAP_kinase_scaffold_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="MAP-kinase scaffold activity")
+ubiquitin_ubiquitin_ligase_activity_effect <- ubiquitin_ubiquitin_ligase_activity %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="ubiquitin-ubiquitin ligase activity")
+
+#COMPONENT
+cellular_anatomical_structure_effect <- cellular_anatomical_structure %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="cellular anatomical structure")
+fungal_type_vacuole_membrane_effect <- fungal_type_vacuole_membrane %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="fungal-type vacuole membrane")
+intracellular_membrane_bounded_organelle_effect <- intracellular_membrane_bounded_organelle %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="intracellular membrane-bounded organelle")
+incipient_cellular_bud_site_effect <- incipient_cellular_bud_site %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="incipient cellular bud site")
+cytoplasm_effect <- cytoplasm %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="cytoplasm")
+vacuolar_transporter_chaperone_complex_effect <- vacuolar_transporter_chaperone_complex %>%
+  rename("gene"= ANNOTATED_GENES) %>% 
+  left_join(filtered_mutations) %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="vacuolar transporter chaperone complex")
+overall <- filtered_mutations %>% 
+  group_by(effect) %>% 
+  summarize(effect_count=n()) %>% 
+  mutate(term="overall")
+```
+```{r}
+#combining terms into one dataframe
+effect_term_compare <- rbind(cellular_process_effect, 
+                             cellular_component_organization_effect,
+                             cellular_response_to_stimulus_effect,
+                             biological_regulation_effect,
+                             regulation_of_cellular_process_effect, 
+                             cytokinetic_process_effect,
+                             polyphosphate_biosynthetic_process_effect, 
+                             phosphotransferase_activity_effect,
+                             transferase_activity_effect,
+                             catalytic_activity_effect,
+                             protein_kinase_activity_effect,
+                             ubiquitin_protein_transferase_activity_effect,
+                             ATP_dependent_activity_effect,
+                             catalytic_activity_acting_on_a_protein_effect,
+                             MAP_kinase_scaffold_activity_effect,
+                             ubiquitin_ubiquitin_ligase_activity_effect,
+                             cellular_anatomical_structure_effect,
+                             fungal_type_vacuole_membrane_effect,
+                             intracellular_membrane_bounded_organelle_effect,
+                             incipient_cellular_bud_site_effect,
+                             cytoplasm_effect,
+                             vacuolar_transporter_chaperone_complex_effect,
+                             overall)
+```
+```{r}
+effect_term_prop <- effect_term_compare %>% 
+  pivot_wider(id_cols=term, names_from = effect, values_from = effect_count) %>%
+  mutate_all(funs(replace_na(.,0))) %>% 
+  mutate(total_snps = HIGH+MODERATE+LOW) %>% 
+  pivot_longer(cols=c(HIGH,MODERATE,LOW), names_to = "effect", values_to = "effect_count") %>% 
+  mutate(prop=effect_count/total_snps)
+
+effect_term_prop$effect <- factor(effect_term_prop$effect, levels=c("HIGH", "MODERATE", "LOW"))
+effect_term_prop$term <- factor(effect_term_prop$term, 
+                                   levels=c("incipient cellular bud site",
+                                            "vacuolar transporter chaperone complex",
+                                            "fungal-type vacuole membrane",
+                                            "intracellular membrane-bounded organelle",
+                                            "cytoplasm",
+                                            "cellular anatomical structure",
+                                            "MAP-kinase scaffold activity",
+                                            "ubiquitin-ubiquitin ligase activity",
+                                            "ubiquitin-protein transferase activity",
+                                            "protein kinase activity",
+                                            "phosphotransferase activity, alcohol group as acceptor",
+                                            "ATP-dependent activity",
+                                            "catalytic activity, acting on a protein",
+                                            "transferase activity",
+                                            "catalytic activity",
+                                            "cytokinetic process",
+                                            "polyphosphate biosynthetic process",
+                                            "cellular response to stimulus",
+                                            "regulation of cellular process",
+                                            "biological regulation",
+                                            "cellular component organization",
+                                            "cellular process",
+                                            "overall")) #bottom of graph to top by number of genes
+  
+effect_term_prop %>% 
+  ggplot(aes(x=term, y=prop, fill=effect, width = ifelse(term == "overall", 1, 0.5))) +
+  geom_bar(stat="identity") +
+  annotate("text", x=1, y=1.05, label="9", size=2.8) + #label is value from total_genes column
+  annotate("text", x=2, y=1.05, label="10", size=2.8) +
+  annotate("text", x=3, y=1.05, label="37", size=2.8) +
+  annotate("text", x=4, y=1.05, label="231", size=2.8) +
+  annotate("text", x=5, y=1.05, label="232", size=2.8) +
+  annotate("text", x=6, y=1.05, label="294", size=2.8) +
+  annotate("text", x=7, y=1.05, label="4", size=2.8) +
+  annotate("text", x=8, y=1.05, label="7", size=2.8) +
+  annotate("text", x=9, y=1.05, label="17", size=2.8) +
+  annotate("text", x=10, y=1.05, label="20", size=2.8) +
+  annotate("text", x=11, y=1.05, label="25", size=2.8) +
+  annotate("text", x=12, y=1.05, label="32", size=2.8) +
+  annotate("text", x=13, y=1.05, label="56", size=2.8) +
+  annotate("text", x=14, y=1.05, label="73", size=2.8) +
+  annotate("text", x=15, y=1.05, label="123", size=2.8) +
+  annotate("text", x=16, y=1.05, label="9", size=2.8) +
+  annotate("text", x=17, y=1.05, label="10", size=2.8) +
+  annotate("text", x=18, y=1.05, label="87", size=2.8) +
+  annotate("text", x=19, y=1.05, label="100", size=2.8) +
+  annotate("text", x=20, y=1.05, label="112", size=2.8) +
+  annotate("text", x=21, y=1.05, label="135", size=2.8) +
+  annotate("text", x=22, y=1.05, label="285", size=2.8) +
+  annotate("text", x=23, y=1.05, label="450", size=2.8) +
+  scale_fill_manual(limits=c("LOW", "MODERATE", "HIGH"), labels = c("silent", "missense", "nonsense/frameshift"), values=c("#5cd65c", "#ffc60c", "#ff6666"))+
+  coord_flip() +
+  labs(x="GO Term", y="Proportion", fill="Mutation Effect") +
+  theme_bw()
+ggsave("GO_distr_of_effects_18Nov2024.png", width=8, height=5, units = "in", dpi=700)
+```
+
+#Goodness of Fit test for the above info
+```{r}
+# All values are taken from effect_term_prop. The order for observed values (from effect_count column) is HIGH, MODERATE, LOW. The expected values are taken from the prop column for term "overall" (order is the same)
+
+expected <- c(0.22666667, 0.61111111, 0.16222222)
+
+observed_cellproc <- c(77,171,37)
+observed_cellcomporg <- c(29,84,22)
+observed_cellrespstim <- c(17,58,12)
+observed_bioreg <- c(27,70,15)
+observed_regcellproc <- c(21,64,15)
+observed_cytoproc <- c(3,3,3)
+observed_polybioproc <- c(9,1,0)
+observed_phosphoact <- c(8,12,5)
+observed_transact <- c(18,47,8)
+observed_catact <- c(25,84,14)
+observed_prokinact <- c(6,10,4)
+observed_ubiqprotransact <- c(2,14,1)
+observed_atpdepact <- c(2,28,2)
+observed_catactpro <- c(11,38,7)
+observed_mapkinscafact <- c(0,4,0)
+observed_ubiqubiqligact <- c(0,7,0)
+observed_cellanatstruc <- c(79,179,36)
+observed_fungvacmem <- c(19,16,2)
+observed_intramemorg <- c(68,135,28)
+observed_incipient <- c(1,5,3)
+observed_cytoplasm <- c(74,136,22)
+observed_vactranschapcomp <- c(9,1,0)
+
+
+chisq.test(x=observed_cellproc, p=expected)
+chisq.test(x=observed_cellcomporg, p=expected)
+chisq.test(x=observed_cellrespstim, p=expected)
+chisq.test(x=observed_bioreg, p=expected)
+chisq.test(x=observed_regcellproc, p=expected)
+chisq.test(x=observed_cytoproc, p=expected)
+chisq.test(x=observed_polybioproc, p=expected)
+chisq.test(x=observed_phosphoact, p=expected)
+chisq.test(x=observed_transact, p=expected)
+chisq.test(x=observed_catact, p=expected)
+chisq.test(x=observed_prokinact, p=expected)
+chisq.test(x=observed_ubiqprotransact, p=expected)
+chisq.test(x=observed_atpdepact, p=expected)
+chisq.test(x=observed_catactpro, p=expected)
+chisq.test(x=observed_mapkinscafact, p=expected)
+chisq.test(x=observed_ubiqubiqligact, p=expected)
+chisq.test(x=observed_cellanatstruc, p=expected)
+chisq.test(x=observed_fungvacmem, p=expected)
+chisq.test(x=observed_intramemorg, p=expected)
+chisq.test(x=observed_incipient, p=expected)
+chisq.test(x=observed_cytoplasm, p=expected)
+chisq.test(x=observed_vactranschapcomp, p=expected)
+```
