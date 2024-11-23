@@ -22,7 +22,7 @@ relfitPalette <- c("#787878", "#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF20
 relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
 relfitPaletteDark <- c("darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
 relfitPaletteBoth = c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF","darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
-pal <- wes_palette("Zissou1", 12, type = "continuous")
+pal <- wes_palette("Zissou1", 14, type = "continuous")
 
 zissou10 = c("#3A9AB2", "#72B2BF", "#95BBB1", "#ADC397", "#CAC96A", "#DFBF2B", "#E5A208", "#EA8005", "#EE5A03", "#F11B00")
 
@@ -751,8 +751,11 @@ write_csv(ct_x, "mbm_intermediate_files/broad_cross_tolerance.csv")
 Add column with info about 9 genes with multiple SNPs
 
 ```{r}
-
+ct_x = read.csv("mbm_intermediate_files/broad_cross_tolerance.csv")
 ct_x$mutation = NA
+
+
+
 
 ct_x <- ct_x %>% 
   mutate(mutation = case_when(strain == "mnbm_21" ~ "gene with ≥3 SNP mutations",
@@ -810,6 +813,7 @@ ct_x <- ct_x %>%
                         )) 
 ct_x[is.na(ct_x)] <- "gene with <3 SNP mutations"
 
+
 ct_x_summ_mut <- ct_x %>% 
   filter(mutation!="mutator") %>% 
   Rmisc::summarySE(measurevar = "relfit1", groupvars = c("mutation"))
@@ -817,6 +821,8 @@ ct_x_summ_mut <- ct_x %>%
 
 
 ct_x$gene = NA
+
+
 
 ct_x <- ct_x %>% 
   mutate(gene = case_when(strain == "mnbm_21" ~ "CDC25",
@@ -828,40 +834,52 @@ ct_x <- ct_x %>%
                             strain == "mnbm_20" ~ "CDC25",
                             strain == "mnbm_15" ~ "CDC25",
                             strain == "mnbm_32" ~ "CDC25",
-                            strain == "mnbm_42" ~ "YOR1",
+                            
+                          strain == "mnbm_42" ~ "YOR1",##
+                          strain == "cdbm_32" ~ "YOR1",
+                          strain == "mnbm_14" ~ "YOR1",##
+                          
                             strain == "cdbm_45" ~ "HUL5",
                             strain == "cdbm_46" ~ "HUL5",
                             strain == "cdbm_47" ~ "HUL5",
-                            strain == "cdbm_30" ~ "HUL5",
+                            strain == "cdbm_30" ~ "HUL5",##
+                          #strain == "mnbm_42" ~ "HUL5",##
+                          
                             strain == "mnbm_13" ~ "MAM3",
                             strain == "mnbm_31" ~ "MAM3",
                             strain == "mnbm_16" ~ "MAM3",
                             strain == "mnbm_17" ~ "MAM3",
                             strain == "cobm_12" ~ "MAM3",
-                            strain == "cobm_18" ~ "MAM3",
+                            strain == "cobm_18" ~ "MAM3",##
+                          
                             strain == "znbm_47" ~ "PTK2",
                             strain == "znbm_43" ~ "PTK2",
                             strain == "cobm_8" ~ "PTK2",
+                          
                             strain == "cdbm_29" ~ "SFP1",
-                            strain == "cdbm_30" ~ "SFP1",
+                           # strain == "cdbm_30" ~ "SFP1",##
                             strain == "cdbm_25" ~ "SFP1",
-                            strain == "cobm_7" ~ "SFP1",
+                            strain == "cobm_7" ~ "SFP1", ##
+                          
                             strain == "cobm_2" ~ "SIW14",
                             strain == "cobm_20" ~ "SIW14",
                             strain == "cobm_17" ~ "SIW14",
                             strain == "cobm_16" ~ "SIW14",
-                            strain == "cobm_18" ~ "SIW14",
+                           # strain == "cobm_18" ~ "SIW14",##
+                          
                             strain == "mnbm_28" ~ "VCX1",
                             strain == "mnbm_12" ~ "VCX1",
                             strain == "mnbm_29" ~ "VCX1",
-                            strain == "mnbm_14" ~ "YOR1",
-                            strain == "nibm_14" ~ "PHO84",
+                        #  strain == "mnbm_14" ~ "VCX1",##
+
+                            strain == "nibm_4" ~ "PHO84",
                             strain == "nibm_11" ~ "PHO84",
                             strain == "nibm_9" ~ "PHO84",
                             strain == "znbm_11" ~ "PHO84",
                             strain == "znbm_38" ~ "PHO84",
                             strain == "znbm_42" ~ "PHO84",
                             strain == "cobm_1" ~ "PHO84",
+                          
                             strain == "znbm_37" ~ "PMA1",
                             strain == "znbm_45" ~ "PMA1",
                             strain == "znbm_46" ~ "PMA1",
@@ -869,20 +887,77 @@ ct_x <- ct_x %>%
                             strain == "znbm_41" ~ "PMA1",
                             strain == "znbm_17" ~ "PMA1",
                             strain == "cobm_21" ~ "PMA1",
-                           strain == "cobm_7" ~ "PMA1", ## this is doubled in other gene
+                          # strain == "cobm_7" ~ "PMA1", ##
                             strain == "cubm_3" ~ "PMA1",
+                          
                           strain == "cobm_3" ~ "VTC4",
                           strain == "cobm_2" ~ "VTC4",
                           strain == "cobm_6" ~ "VTC4",
-                          strain == "cdbm_32" ~ "YOR1",
                           
+                          strain == "cobm_21" ~ "VTC5",
+                          strain == "cobm_4" ~ "VTC5",
+                         # strain == "cdbm_30" ~ "VTC5",##
+                          strain == "cobm_15" ~ "VTC5",
+                          
+                          strain == "mnbm_14" ~ "YGR130C",##
+                          
+          
                         )) 
+
+mn42 = c("mnbm_42",
+5,
+0.0167083034,
+0.042084356,
+0.0188206964,
+0.052254630, "gene with ≥3 SNP mutations","HUL5")
+
+mn14_1 = c("mnbm_14",
+5,
+0.0327898095,
+0.082120312,
+0.0367253200,
+0.101965835, "gene with ≥3 SNP mutations","VCX1")
+mn14_2 = c("mnbm_14",
+5,
+0.0327898095,
+0.082120312,
+0.0367253200,
+0.101965835, "gene with ≥3 SNP mutations","YGR130C")
+cd30_1 = c("cdbm_30",
+5,
+0.0167164326,
+0.024775732,
+0.0110800441,
+0.030763134, "gene with ≥3 SNP mutations","SFP1")
+cd30_2 = c("cdbm_30",
+5,
+0.0167164326,
+0.024775732,
+0.0110800441,
+0.030763134, "gene with ≥3 SNP mutations","VTC5")
+co18 = c("cobm_18",
+5,
+0.0413293637,
+0.044058443,
+0.0197035347,
+0.054705782, "gene with ≥3 SNP mutations","SIW14")
+co7 = c("cobm_7",
+5,
+0.0970299424,
+0.055952377,
+0.0250226635,
+0.069474052, "gene with ≥3 SNP mutations","PMA1")
+
+ct_x = rbind(ct_x, mn42, mn14_1, mn14_2, cd30_1, cd30_2, co18, co7)
+
+
 ct_x[is.na(ct_x)] <- "<3 SNP"
 
+ct_x$relfit1 = as.numeric(ct_x$relfit1)
+
 ct_x_summ_gene <- ct_x %>% 
-  filter(mutation!="mutator") %>% 
-  filter(gene!="mutator") %>% 
   Rmisc::summarySE(measurevar = "relfit1", groupvars = c("gene"))
+
 
 
 
@@ -904,11 +979,10 @@ ct_x %>%
 
 ggsave("figures/geneall3SNPs.jpeg", width=14, height=10, units = "in", dpi=700) #
 
+
 ct_x %>%
   na.omit() %>% 
-  filter(mutation!="mutator") %>% 
-  filter(gene!="mutator") %>% 
-  ggplot(aes(x=gene,y=relfit1,fill=gene)) +
+  ggplot(aes(x=gene,y=relfit1,fill=gene, group=gene)) +
     geom_point(alpha=0.2, size=1.5, position=position_dodge(width=0.75),aes(group=gene)) + 
     stat_summary(fun=mean, geom="point", shape=21, size=8,
              position=position_dodge2(width=0.75, preserve="single")) +
@@ -1001,6 +1075,10 @@ ct_YOR1 = ct_x %>%
   rbind(ct_less3)
 t.test(relfit1 ~ gene, data = ct_YOR1)
 
+ct_VTC5 = ct_x %>%
+  filter(gene==c("VTC5")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_VTC5)
 
 
 ```

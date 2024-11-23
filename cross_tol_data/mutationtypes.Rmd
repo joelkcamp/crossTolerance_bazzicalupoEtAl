@@ -189,6 +189,76 @@ MnBM14_res <- chisq.test(MnBM14, p = lynch_other) #X-squared = 39.961, df = 5, p
 
 
 ```
+Warning: Chi-squared approximation may be incorrect
+	Chi-squared test for given probabilities
+
+data:  gerstein
+X-squared = 7.1557, df = 5, p-value = 0.2093
+
+Warning: Chi-squared approximation may be incorrect
+	Chi-squared test for given probabilities
+
+data:  gerstein
+X-squared = 4.7208, df = 5, p-value = 0.4509
+
+> Cd_res
+
+	Chi-squared test for given probabilities
+
+data:  Cd
+X-squared = 25.37, df = 5, p-value = 0.0001182
+
+> Co_res
+
+	Chi-squared test for given probabilities
+
+data:  Co
+X-squared = 20.74, df = 5, p-value = 0.0009068
+
+> Cu_res
+
+	Chi-squared test for given probabilities
+
+data:  Cu
+X-squared = 10.39, df = 5, p-value = 0.06492
+
+> Mn_res
+
+	Chi-squared test for given probabilities
+
+data:  Mn
+X-squared = 26.103, df = 5, p-value = 8.522e-05
+
+> Ni_res
+
+	Chi-squared test for given probabilities
+
+data:  Ni
+X-squared = 4.2349, df = 5, p-value = 0.5161
+
+> Zn_res
+
+	Chi-squared test for given probabilities
+
+data:  Zn
+X-squared = 4.7585, df = 5, p-value = 0.4461
+
+> MnBM42_res
+
+	Chi-squared test for given probabilities
+
+data:  MnBM42
+X-squared = 33.803, df = 5, p-value = 2.606e-06
+
+> MnBM14_res
+
+	Chi-squared test for given probabilities
+
+data:  MnBM14
+X-squared = 39.961, df = 5, p-value = 1.521e-07
+
+
+
 
 ```{r}
 
