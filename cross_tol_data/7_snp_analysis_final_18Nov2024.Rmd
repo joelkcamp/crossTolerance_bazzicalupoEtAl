@@ -1,0 +1,302 @@
+---
+title: "mel_vcf_cleaning_haploidformat"
+output: html_document
+date: '2023-04-14'
+---
+
+```{r}
+library(tidyverse)
+library(viridis)
+library(plotly)
+x = getwd()
+setwd(x)
+name_codes = read_csv("code_strain_line.csv")
+```
+
+# Quality control
+
+```{r}
+mel_haploid <- read_tsv("full_genome_haploid.txt") %>% 
+  separate_rows(INFO, sep = ";") %>% 
+  separate(INFO, into = c("key", "value"), sep = "=") %>% 
+  pivot_wider(names_from = key, values_from = value) %>% 
+  relocate(QD, .after=POS)
+mel_haploid$QD <- as.numeric(mel_haploid$QD)
+mel_haploid$FS <- as.numeric(mel_haploid$FS)
+mel_haploid$SOR <- as.numeric(mel_haploid$SOR)
+mel_haploid$MQ <- as.numeric(mel_haploid$MQ)
+
+#removing low quality sites
+mel_raw00 <- mel_haploid %>% 
+  filter(QD > 4)
+mel_raw00 <- mel_raw00 %>% 
+  filter(FS < 50)
+mel_raw00 <- mel_raw00 %>% 
+  filter(SOR < 4)
+mel_raw00 <- mel_raw00 %>% 
+  filter(MQ > 50)
+  
+#removing sites with multiple alternates
+mel_raw00 <- mel_raw00 %>% 
+  filter(!grepl(",", ALT))
+
+# Loop over each column
+target_cols <-grep("_S", colnames(mel_raw00), value = TRUE)
+
+# Loop over only the target columns
+for (col in target_cols) {
+  # Split by commas, then by colons for each element
+  split_data <- strsplit(as.character(mel_raw00[[col]]), ":")
+  GT <- sapply(split_data, function(x) x[1])  # First position (GT)
+  DP <- sapply(split_data, function(x) if (length(x) >= 3) x[3] else NA)
+  
+  # Create new columns with .GT and .DP suffixes
+  mel_raw00[[paste0(col, ".GT")]] <- GT
+  mel_raw00[[paste0(col, ".DP")]] <- DP
+  
+  # Remove the original target column
+  mel_raw00[[col]] <- NULL
+}
+
+# Identify columns that end with .DP
+dp_columns <- grep("\\.DP$", colnames(mel_raw00), value = TRUE)
+# Convert each .DP column to numeric
+mel_raw00[dp_columns] <- lapply(mel_raw00[dp_columns], as.numeric)
+# If depth is < 5 change GT to "."
+mel_filtered <- mel_raw00 %>% 
+  mutate(across(ends_with(".GT"), ~if_else(get(str_replace(cur_column(), ".GT", ".DP")) < 5, ".", .)))
+
+```
+
+```{r}
+#remove .GT from column name
+#colnames(mel_filtered)<-gsub(".GT","",colnames(mel_filtered))
+
+#Only keep sites were there are instances of both 0 and 1
+GTs_by_line <- mel_filtered %>% 
+  pivot_longer(cols = ends_with(".GT"), names_to = "evo_line", values_to = "genotype") 
+GTs_by_site <- GTs_by_line %>%
+  select(CHROM,POS,genotype) %>% 
+  distinct() 
+#which sites only have low coverage and one other genotype?
+GTs_summary_RMlowcoverage <- GTs_by_site %>% 
+  filter(genotype!=".") %>% 
+  group_by(CHROM, POS) %>% 
+  summarize(num_gt=n())
+true_sites <- GTs_summary_RMlowcoverage %>% 
+  filter(num_gt!=1) #check true_sites to make sure the only value in num_gt is 2
+
+mel_true_site <- mel_filtered %>% right_join(true_sites) %>% 
+  relocate(OLY077_S101.GT, .before=CdBM23_S1.GT)
+mel_true_site %>% write.csv("mel_true_site.csv")
+```
+
+
+```{r}
+##### Add in code to generate list of sites without heterozygotes from diploid file - must have at least one instance of 1/1
+mel_diploid <- read_tsv("full_genome_diploid.txt")
+target_cols <-grep("_S", colnames(mel_diploid), value = TRUE)
+
+# Loop over only the target columns
+for (col in target_cols) {
+  # Split by commas, then by colons for each element
+  split_data <- strsplit(as.character(mel_diploid[[col]]), ":")
+  GT <- sapply(split_data, function(x) x[1])  # First position (GT)
+  
+  # Create new columns with .GT and .DP suffixes
+  mel_diploid[[paste0(col, ".GT")]] <- GT
+  
+  # Remove the original target column
+  mel_diploid[[col]] <- NULL
+}
+
+#Only keep sites were there is at least one instance of 1|1 or 1/1 (removing heterozygotes)
+dip_GTs_by_line <- mel_diploid %>% 
+  pivot_longer(cols = contains("_S"), names_to = "evo_line", values_to = "genotype") 
+dip_GTs_by_site <- dip_GTs_by_line %>%
+  select(CHROM,POS,genotype) %>% 
+  distinct() 
+dip_GTs_1.1 <- dip_GTs_by_site %>% 
+  filter(genotype=="1|1" | genotype=="1/1") %>% 
+  select(CHROM, POS) %>% 
+  distinct() %>% 
+    mutate(chr=case_when(grepl("001133", CHROM) ~"chrI",
+                       grepl("001134", CHROM) ~"chrII",
+                       grepl("001135", CHROM) ~"chrIII",
+                       grepl("001136", CHROM) ~"chrIV",
+                       grepl("001137", CHROM) ~"chrV",
+                       grepl("001138", CHROM) ~"chrVI",
+                       grepl("001139", CHROM) ~"chrVII",
+                       grepl("001140", CHROM) ~"chrVIII",
+                       grepl("001141", CHROM) ~"chrIX",
+                       grepl("001142", CHROM) ~"chrX",
+                       grepl("001143", CHROM) ~"chrXI",
+                       grepl("001144", CHROM) ~"chrXII",
+                       grepl("001145", CHROM) ~"chrXIII",
+                       grepl("001146", CHROM) ~"chrXIV",
+                       grepl("001147", CHROM) ~"chrXV",
+                       grepl("001148", CHROM) ~"chrXVI",
+                       grepl("001224", CHROM) ~"chrMito"),
+         .after = CHROM) %>% 
+  select(!CHROM) %>% 
+  rename("CHROM" = chr) %>% 
+  mutate(keep = "1")
+
+#Remove any sites left that don't have any 1|1 in diploid file
+mel_nohet <- mel_true_site %>% left_join(dip_GTs_1.1) %>% 
+  select(-c(BaseQRankSum, MQRankSum, ReadPosRankSum)) %>% 
+  drop_na()
+
+#From here I will use the sites in mel_nohet as the new regions file for snpEff
+regions <- mel_nohet %>% select(CHROM, POS) #write.csv("regions_file_Nov2024.table", row.names = FALSE)
+
+# I opened full_genome.vcf in excel and used vlookup to change chromosome names to match the reference in snpeff. The chromosome name format was "chr_" with _ being a roman numeral. The mitochondrial chromosome is called "chrMito". The new file is called full_genome_Nov2024.vcf
+# The code used to generate snpEff output from full_genome.vcf: java -Xmx8g -jar ~/snpEff/snpEff.jar Saccharomyces_cerevisiae full_genome_Nov2024.vcf > full_genome_Nov2024.ann.vcf
+# I opened full_genome_Nov2024.ann.vcf in excel, removed the extraneous header rows, and saved as a tab-delimited text file called full_genome_Nov2024_ann.txt so it could be read into R
+
+#Here I'm loading in the snpEff output and removing sites that are not in mel_nohet
+snpEff_output <- read_tsv("full_genome_Nov2024_ann.txt")
+filtered_snpEff <- left_join(regions, snpEff_output) %>% 
+  #separate components of INFO column into DP, ANN, etc
+  separate_rows(INFO, sep = ";") %>% 
+  separate(INFO, into = c("key", "value"), sep = "=") %>% 
+  pivot_wider(names_from = key, values_from = value) %>% 
+  select(!c(ID, FILTER)) %>% 
+  relocate(ANN, .before=CdBM23_S1) %>% 
+  #make new column with just the first annotation and extract the components of ANN
+  mutate(ANN_short = sub(",.*", "", ANN), .before=ANN) %>% 
+  mutate(mut_type = strsplit(as.character(ANN_short), "\\|") %>% sapply(`[`, 2)) %>% 
+  mutate(effect = strsplit(as.character(ANN_short), "\\|") %>% sapply(`[`, 3)) %>% 
+  mutate(gene = strsplit(as.character(ANN_short), "\\|") %>% sapply(`[`, 4)) %>%
+  mutate(gene_code = strsplit(as.character(ANN_short), "\\|") %>% sapply(`[`, 5)) %>%
+  mutate(base_change = strsplit(as.character(ANN_short), "\\|") %>% sapply(`[`, 10)) %>%
+  mutate(aa_change = strsplit(as.character(ANN_short), "\\|") %>% sapply(`[`, 11)) %>%
+  relocate(effect, .before=ANN_short) %>% 
+  relocate(mut_type, .before=ANN_short) %>% 
+  relocate(gene, .after=FORMAT) %>% 
+  relocate(gene_code, .before=ANN_short) %>% 
+  relocate(base_change, .before=ANN_short) %>% 
+  relocate(aa_change, .before=ANN_short) %>% 
+  #remove rows where the first annotation was a MODIFIER effect
+  filter(effect!="MODIFIER") %>% 
+  relocate(OLY077_S101, .before=CdBM23_S1) %>% 
+  select(!c(ANN_short)) %>% 
+  #cleaning up the file
+  #mutate(across(OLY077_S101:ZnBM47_S95, ~ sub(":.*", "", .))) %>% 
+  mutate(chr=case_when(CHROM=="chrI" ~ 1,
+                       CHROM=="chrII" ~ 2,
+                       CHROM=="chrIII" ~ 3,
+                       CHROM=="chrIV" ~ 4,
+                       CHROM=="chrV" ~ 5,
+                       CHROM=="chrVI" ~ 6,
+                       CHROM=="chrVII" ~ 7,
+                       CHROM=="chrVIII" ~ 8,
+                       CHROM=="chrIX" ~ 9,
+                       CHROM=="chrX" ~ 10,
+                       CHROM=="chrXI" ~ 11,
+                       CHROM=="chrXII" ~ 12,
+                       CHROM=="chrXIII" ~ 13,
+                       CHROM=="chrXIV" ~ 14,
+                       CHROM=="chrXV" ~ 15,
+                       CHROM=="chrXVI" ~ 16,
+                       CHROM=="chrMito" ~ 17),
+         .after=CHROM) %>% 
+  arrange(chr,POS)
+
+filtered_snpEff %>% write_tsv("snpEff_RMheterozygotes_RMmodifiers_4Nov2024.tsv") #this has 462 sites
+
+#Sally did the steps below in Mathematica file "BazzicalupoSupMat_FinalizingGenes8Nov2024.nb"
+##drop sites with 5 or more instances of GT "."
+##drop tRNAs
+##where there are overlapping protein-coding genes - switch to verified gene
+##All remaining genes starting with Y were manually checked in SGD. Those with a gene name were changed to that, those without gene name were dropped 
+filtered_mathematica <- read_tsv("fullgenomeSNPEFF_Afterfiltering.tsv") 
+```
+```{r}
+filtered_snpEff_long <- filtered_mathematica %>% pivot_longer(cols=OLY077_S101:ZnBM47_S95, names_to = "evo_line", values_to = "genotype") %>% 
+  mutate(evo_line = sub("_.*", "", evo_line)) %>% 
+  mutate(genotype = sub(":.*", "", genotype)) 
+
+filtered_snpEff_only1 <- filtered_snpEff_long %>% filter(genotype==1)
+filtered_snpEff_onlyOLY <- filtered_snpEff_long %>% filter(evo_line=="OLY077")
+```
+
+```{r}
+mutations <- filtered_snpEff_only1 %>%
+  select(!c(ANN,AC,AF,AN,BaseQRankSum,DP,FS,MLEAC,MLEAF,MQ,MQRankSum,QD,ReadPosRankSum,SOR,LOF))
+#change SRP40 so only line with GT 1 is CdBM39, then rerun counts
+mutations$evo_line <- gsub("OLY077", "CdBM39", mutations$evo_line)
+filtered_mutations <- mutations %>% 
+  mutate(genotype_fixed = case_when(gene=="SRP40" & evo_line=="CdBM39" ~ "1",
+                                    gene=="SRP40" & evo_line!="CdBM39" ~ "0",
+                                    .default = genotype)) %>% 
+  filter(genotype_fixed!=0) %>% 
+  select(!genotype_fixed)
+
+filtered_mutations %>% write.csv("final_snps_18Nov2024.csv")
+```
+
+number of mutations by line
+```{r}
+snps_count <- filtered_mutations %>% 
+  group_by(evo_line) %>% 
+  summarize(count=n()) %>% 
+  mutate(metal = substr(evo_line, 1, 2))
+  
+snps_count %>% 
+  ggplot(aes(x=count, fill=metal)) +
+  geom_histogram(binwidth = 1) +
+  scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+  labs(x="Number of mutations", y="Number of evolved lines") +
+  theme_bw()
+ggsave("number_mutations_histogram_18Nov2024.png", width=7, height=5, units = "in")
+```
+```{r}
+kruskal_test_result <- kruskal.test(count ~ metal, data = snps_count)
+print(kruskal_test_result)
+
+dunn_test_result <- dunn.test(snps_count$count, snps_count$metal, method = "bonferroni")
+print(dunn_test_result)
+```
+```{r}
+#lines with 0 mutations
+#Cd 1
+#Cu 2
+#Mn 1
+#Ni 5
+#Zn 2
+
+lines_w_nomut <- data.frame(evo_line=c("CdBMA", "CuBMA", "CuBMB", "MnBMA", "NiBMA", "NiBMB", "NiBMC", "NiBMD", "NiBME", "ZnBMA", "ZnBMB"),
+                            count=c(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5),
+                            metal=c("Cd", "Cu", "Cu", "Mn", "Ni", "Ni", "Ni", "Ni", "Ni", "Zn", "Zn"))
+snps_count2 <- rbind(snps_count, lines_w_nomut)
+
+
+num_mut_sum <- snps_count2 %>%
+  group_by(metal) %>% 
+  summarise(avg_num=mean(count), sd_num=sd(count))
+
+
+ggplot(data = snps_count2, aes(x = metal, y = count, fill = metal))+
+       scale_y_log10(breaks=c(1, 2, 5, 10, 20, 50, 100))+
+       scale_fill_manual(values = c("#FF9A17", "#3B83FF", "#3EFF3B", "#FD73FF", "#FFF200", "#A880FF"), name = "Evolution\nenvironment") +
+       geom_violin(alpha=0.5, position = position_dodge(width = .75),size=1,color=NA) +
+       ggbeeswarm::geom_quasirandom(shape = 21,size=3, dodge.width = .75, color="black",alpha=1,show.legend = F)+
+       #geom_boxplot(notch = FALSE,  outlier.size = -1, color="black",lwd=1, alpha = 0.4,show.legend = F)+
+       geom_point(data=num_mut_sum, aes(x=metal, y=avg_num), shape = 21,size=4,, fill="black",alpha=1)+
+       geom_errorbar(data=num_mut_sum, aes(x=metal, ymin=avg_num-sd_num, ymax=avg_num+sd_num), width=.2, inherit.aes = FALSE) +
+       theme_classic()+
+       ylab(c("Number of mutations per evolved line"))  +
+       xlab(c("Evolution environment"))  +
+       #rremove("legend.title")+
+       theme(#panel.border = element_rect(colour = "black", fill=NA, size=2),
+             axis.line = element_line(colour = "black",linewidth=1),
+             axis.ticks = element_line(linewidth=1,color="black"),
+             axis.text = element_text(color="black"),
+             axis.ticks.length=unit(0.2,"cm"),
+             legend.position = "none")+
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) +
+  #scale_y_continuous() +
+  annotate("segment", x = 4, xend = 4, y = 0, yend = 31.3282, colour = "black")
+ggsave("num_mutations_18Nov2024_final.png", dpi=700)
+```
