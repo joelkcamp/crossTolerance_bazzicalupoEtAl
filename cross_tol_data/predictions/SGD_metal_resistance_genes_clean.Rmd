@@ -20,7 +20,7 @@ Read in data taken directly from the metal resistance observable phenotype page 
 x = getwd()
 setwd(x)
 
-genes <- read.csv("metal_resistance_annotations.csv")
+genes <- read.csv("metal_resistance_annotations.csv") #This file is from Aug 24, 2021 https://www.yeastgenome.org/observable/APO:0000090
 ```
 
 Extract metal information from "Chemical" column and filter for metals of interest
