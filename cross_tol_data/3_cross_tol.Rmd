@@ -24,6 +24,8 @@ relfitPaletteDark <- c("darkorange3", "dodgerblue4","darkgreen", "deeppink", "go
 relfitPaletteBoth = c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF","darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
 pal <- wes_palette("Zissou1", 14, type = "continuous")
 
+pal2 <- c("#DFBF2B","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2")
+
 zissou10 = c("#3A9AB2", "#72B2BF", "#95BBB1", "#ADC397", "#CAC96A", "#DFBF2B", "#E5A208", "#EA8005", "#EE5A03", "#F11B00")
 
 legend_title1 <- "Test\nEnvironment"
@@ -113,6 +115,12 @@ all_summary1 <- mydata6 %>%
   #filter(E2!=".YPAD") %>% 
   Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1", "E2"))
 # maybe add a row with YPAD to have zeros in the figures?
+
+abs_summary1 <- mydata6 %>% 
+  #filter(E2!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "avg_slope", groupvars = c("E1", "E2"))
+# maybe add a row with YPAD to have zeros in the figures?
+
 #write_csv(mydata6, "mbm_intermediate_files/mydata6.csv")
 ```
 
@@ -129,7 +137,10 @@ diff_relfit=mydata6 %>%
 diff_summary1 <- diff_relfit %>% 
   filter(E1!=".YPAD") %>% 
   Rmisc::summarySE(measurevar = "relfitdiff", groupvars = c("E1", "E2"))
+```
 
+MAKE GRAPHS
+```{r}
 test_env_home=diff_relfit %>%
   #na.omit() %>% 
   filter(E1!=".YPAD") %>% 
@@ -138,7 +149,7 @@ test_env_home=diff_relfit %>%
       geom_hline(yintercept=0, size=1.5)+
 stat_summary(fun=mean, geom="point", shape=21, size=4,
              position=position_dodge2(width=0.75, preserve="single")) +
-    geom_errorbar(data=diff_summary1, aes(ymin = relfitdiff - ci, ymax = relfitdiff + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=diff_summary1, aes(ymin = relfitdiff - se, ymax = relfitdiff + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
     scale_fill_manual(legend_metal, values=relfitPalette2) +
     labs(x="Test Environment", y="Relative\nFitness", title = "Relative to performance in the evolution environment") +
     theme_bw() +
@@ -166,7 +177,7 @@ test_env_anc=mydata6 %>% # run all_summary1 from previous chunk
       geom_hline(yintercept=0, size=1.5)+
 stat_summary(fun=mean, geom="point", shape=21, size=4,
              position=position_dodge2(width=0.75, preserve="single")) +
-    geom_errorbar(data=all_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=all_summary1, aes(ymin = relfit1 - se, ymax = relfit1 + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
     scale_fill_manual(legend_metal, values=relfitPalette) +
     labs(x="Test Environment", y="Relative\nFitness", title = "Relative to the performance of the ancestor") +
     theme_bw() +
@@ -187,6 +198,38 @@ stat_summary(fun=mean, geom="point", shape=21, size=4,
 
 
 ggsave("figures/all_point_anc.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+
+
+test_env_abs=mydata6 %>% # run all_summary1 from previous chunk 
+  #na.omit() %>% 
+  #filter(E1!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=avg_slope,fill=E1)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+      geom_hline(yintercept=0, size=1.5)+
+stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=abs_summary1, aes(ymin = avg_slope - se, ymax = avg_slope + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_metal, values=relfitPalette) +
+    labs(x="Test Environment", y="Absolute\nFitness", title = "Absolute Growth Rate") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(1))) +
+      annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#A880FF") +
+  geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+
+
+ggsave("figures/all_point_abs.jpeg", width=8, height=6, units = "in", dpi=1000)
 ```
 
 Looking by strain
@@ -228,6 +271,7 @@ cd_lines=E1cd_data %>%
   annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
   theme_minimal()+
   ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Cadmium")+
   theme(
   axis.line.x = element_line(size = 1, color = "black"),
   axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
@@ -251,6 +295,7 @@ co_lines=E1co_data %>%
   annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
   theme_minimal()+
   ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Cobalt")+
   theme(
   axis.line.x = element_line(size = 1, color = "black"),
   axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
@@ -275,6 +320,7 @@ cu_lines=E1cu_data %>%
   annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
   theme_minimal()+
   ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Copper")+
   theme(
   axis.line.x = element_line(size = 1, color = "black"),
   axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
@@ -299,6 +345,7 @@ mn_lines=E1mn_data %>%
   annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
   theme_minimal()+
   ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Manganese")+
   theme(
   axis.line.x = element_line(size = 1, color = "black"),
   axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
@@ -323,6 +370,7 @@ ni_lines=E1ni_data %>%
   annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
   theme_minimal()+
   ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Nickel")+
   theme(
   axis.line.x = element_line(size = 1, color = "black"),
   axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
@@ -347,6 +395,7 @@ zn_lines=E1zn_data %>%
   annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#A880FF") +
   theme_minimal()+
   ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Zinc")+
   theme(
   axis.line.x = element_line(size = 1, color = "black"),
   axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
@@ -359,7 +408,7 @@ zn_lines=E1zn_data %>%
 
 ```{r}
 
-profiles=plot_grid(cd_lines,co_lines,cu_lines,mn_lines,ni_lines,zn_lines,ncol = 3, align = "v",labels = c("A","B","C","D","E", "F"))
+profiles=plot_grid(cd_lines,co_lines,cu_lines,mn_lines,ni_lines,zn_lines,ncol = 3, align = "v",labels = c("D","E","F","G","H", "I"))
 
 ggsave("figures/profiles.jpeg", width=10, height=7, units = "in", dpi=700) #
 
@@ -540,16 +589,21 @@ zn_lines_diff=E1zn_diff %>%
 
 profiles_home=plot_grid(cd_lines_diff,co_lines_diff,cu_lines_diff,mn_lines_diff,ni_lines_diff,zn_lines_diff,ncol = 3, align = "v",labels = c("H","I","J","K", "L", "M"))
 
-ggsave("figures/profiles_home.jpeg", width=10, height=7, units = "in", dpi=700) #
+ggsave("figures/profiles_home1.jpeg", width=10, height=7, units = "in", dpi=700) #
 ```
 
 ```{r}
 
 #cross_tol=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),test_env_home + theme(legend.position = "none"),ncol = 1, align = "h", labels = c("", "G","H"), rel_heights = c(2,1,1)) # + theme(legend.position = "none")
 
-cross_tol1=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),profiles_home, ncol = 1, align = "h", labels = c("", "G",""), rel_heights = c(2,1,2))
+#cross_tol1=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),profiles_home, ncol = 1, align = "h", labels = c("", "G",""), rel_heights = c(2,1,2))
 
-ggsave("figures/phenotypes1.jpeg", width=10, height=10, units = "in", dpi=700) # figure 2
+cross_tol1=plot_grid(test_env_abs+ theme(legend.position = "none"),test_env_anc+ theme(legend.position = "none"),test_env_home+ theme(legend.position = "none"), profiles, ncol = 1, align = "h", labels = c("A", "B","C", ""), rel_heights = c(1,1,1,2))
+
+
+#ggsave("figures/phenotypes1.jpeg", width=10, height=10, units = "in", dpi=700) # figure 2
+#ggsave("figures/phenotypes_abs.jpeg", width=10, height=12, units = "in", dpi=700) # figure 2
+ggsave("figures/phenotypes_all.jpeg", width=10, height=12, units = "in", dpi=700) # figure 2
 ```
 
 Calulating narrow-scale cross-tolerance between a pair of metals (X and Y) is the average ratio of growth in the non-evolved env’t to the evolved env’t.  That is, cross-tolerance would be:
@@ -987,7 +1041,7 @@ ct_x %>%
     stat_summary(fun=mean, geom="point", shape=21, size=8,
              position=position_dodge2(width=0.75, preserve="single")) +
     geom_errorbar(data=ct_x_summ_gene, aes(ymin = relfit1 - se, ymax = relfit1 + se), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
-    scale_fill_manual(values = pal) +
+    scale_fill_manual(values = pal2) +
     labs(x="Mutations", y="Broad-scale cross-tolerance")+
     theme(labs.title=element_text(size=rel(1.1))) +
     theme_bw() +  geom_hline(yintercept=0, size=2)+
@@ -1006,7 +1060,7 @@ ct_x %>%
     stat_summary(fun=mean, geom="point", shape=21, size=7,
              position=position_dodge2(width=0.75, preserve="single")) +
     geom_errorbar(data=ct_x_summ_gene, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
-    scale_fill_manual(values = pal) +
+    scale_fill_manual(values = pal2) +
     labs(x="Mutations", y="Broad-scale cross-tolerance")+
     theme(labs.title=element_text(size=rel(1.5)))+ 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
