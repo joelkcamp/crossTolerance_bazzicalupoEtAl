@@ -11,13 +11,15 @@ library(tidyverse)
 library(cowplot)
 #library(ggblur)
 # set wd
-source("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/bioscreen_functions.R")
+
+setwd("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/depth/10_DepthAnalyses/")
+source("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/bioscreen_functions.R")
 library(viridis)
-setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/")
+setwd("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/")
 
 # file with metadata of bioscreen wells
-codes <- read.csv("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/bioscreen20230418BIO1_codes.csv") # 
-biosc2 <- read.csv("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/20230418_BIO2.csv")
+codes <- read.csv("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/bioscreen20230418BIO1_codes.csv") # 
+biosc2 <- read.csv("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/raw_outcross_petite/20230418_BIO2.csv")
 
 ```
 
@@ -51,7 +53,7 @@ Plot petite outcross growth graphs
 ```{r}
 
 # loop through matrix to get growth curves, maximum slope and final OD per well
-pdf("~/crossTolerance_bazzicalupoEtAl/cross_tol_data/figures/outcross_petite_metals.pdf", onefile = TRUE)
+pdf("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/figures/outcross_petite_metals.pdf", onefile = TRUE)
 par(mfrow = c(10,4))
 par(mar = c(0,0,0,0))
 par(cex=0.5, mai=c(0.1,0.2,0.1,0.1))
@@ -87,24 +89,24 @@ out_mydata <- codes %>%
 Clean dataframe
 ```{r}
 out_OLY077_data <- out_mydata %>% 
-  filter(strain=="OLY077" | strain=="ypadOLY077") %>% 
+  filter(strain=="OLY077" ) %>% 
   arrange(E2) %>% 
   select(strain, E2, maxSlope)
   
+
+```
 out_OLY077_data <- out_OLY077_data %>% 
   dplyr::group_by(E2) %>% 
   summarise(anc_slope = mean(maxSlope))
-```
-
 
 ```{r}
 out_mydata3 <- merge(out_OLY077_data, out_mydata, by = 'E2')
 
 out_mydataOLY <- out_mydata3 %>% 
-  filter(strain=="ypadOLY077")
+  filter(strain.y=="OLY077")
 
 out_mydata3 <- out_mydata3 %>% 
-  mutate(relfit = maxSlope - anc_slope)
+  mutate(relfit = maxSlope.y - maxSlope.x)
 
 out_mydata3 <- out_mydata3 %>% 
   mutate(E2 = case_when(E2 == "YPAD" ~ ".YPAD",
@@ -116,39 +118,37 @@ out_mydata3 <- out_mydata3 %>%
 Load metal experimental data 
 
 ```{r}
-setwd("~/crossTolerance_bazzicalupoEtAl/cross_tol_data")
+setwd("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data")
 name_codes = read_csv("code_strain_line.csv")
-mydata3 = read.csv("mbm_intermediate_files/mydata3.csv")
-mydata6 = mydata3 %>% 
-  select(strain, E1, E2, maxSlope, anc_slope) %>% 
-  arrange(strain, E1, E2) %>% 
-  group_by(strain, E1, E2, anc_slope) %>% 
-  summarise(avg_slope = mean(maxSlope)) %>% 
-  mutate(relfit1 = avg_slope - anc_slope) 
 
+mydata6 = read.csv("mbm_intermediate_files/mydata6.csv")
 
 out_mydata6 <- out_mydata3 %>% 
-  select(strain, E2,  maxSlope, anc_slope) %>% 
-  arrange(strain, E2) %>% 
-  group_by(strain, E2,  anc_slope) %>% 
-  summarise(avg_slope = mean(maxSlope)) %>% 
-  mutate(relfit1 = avg_slope - anc_slope)
+  select(strain.y, E2,  maxSlope.y, maxSlope.x) %>% 
+  arrange(strain.y, E2) %>% 
+  group_by(strain.y, E2, maxSlope.x) %>% 
+  dplyr::summarise(avg_slope = mean(maxSlope.y)) %>% 
+  mutate(relfit1 = avg_slope - maxSlope.x)
 
 out_mydata6[out_mydata6 == "OLY077"] <- "W303"
 mydata6[mydata6 == "blank"] <- "Blank"
 
 out_mydata6 <- out_mydata6 %>% 
-  filter(strain != "Blank")
+  dplyr::filter(strain.y != "Blank")
 
 ```
 
 Add petite phenotype information
 
 ```{r}
+table(out_petite$petite)
+table(petites$petite)
+
 out_petites = read_csv("raw_outcross_petite/outcross_petite.csv")
 legend_title_none = ""
-
+out_mydata6$strain <- out_mydata6$strain.y
 out_petite <- merge(out_mydata6,out_petites,by="strain")
+
 
 out_summary1 <- out_petite %>% 
   #filter(E2!=".YPAD") %>% 
@@ -161,7 +161,7 @@ out_pet=out_petite %>%
     geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=petite)) + 
     stat_summary(fun=mean, geom="point", shape=21, size=4,
              position=position_dodge2(width=0.75, preserve="single")) +
-    geom_errorbar(data=out_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=out_summary1, aes(ymin = relfit1 - se, ymax = relfit1 + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
      # scale_fill_discrete(limits = c("np", "p"),labels = c("Grande", "Petite"), values=petitePalette2)+
     scale_fill_manual(legend_title_none, limits = c("np", "p"),labels = c("Grande", "Petite"), values=petitePalette2) +
     labs(x="Test Environment", y="") +
@@ -175,11 +175,25 @@ out_pet=out_petite %>%
     geom_vline(xintercept = 6.5)
 #ggsave("figures/petite_outcross.jpeg", width=8, height=6, units = "in", dpi=1000)
 
-```
 
+
+
+```
+oucrossing study Petite t-test analysis out_petite 
+```{r}
+all_res_aov <- aov(relfit1 ~ petite*E2,
+  data = out_petite
+)
+
+summary(all_res_aov)
+
+
+
+
+```
 Petite analysis
 ```{r}
-
+name_codes = read_csv("code_strain_line.csv")
 petites = read_csv("raw_outcross_petite/petites.csv")
 colnames(petites)[colnames(petites) == "evoline"] ="code_0"
 petites1 <- merge(petites,name_codes,by="code_0")
@@ -194,7 +208,7 @@ met_pet=mydata7 %>%
     geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=petite)) + 
     stat_summary(fun=mean, geom="point", shape=21, size=4,
              position=position_dodge2(width=0.75, preserve="single")) +
-    geom_errorbar(data=pet_summary1, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=pet_summary1, aes(ymin = relfit1 - se, ymax = relfit1 + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
     scale_fill_manual(values=petitePalette2) +
     #scale_fill_manual(legend_title_none, limits = c("Non-petite (n = 70)", "Petite (n =38)"),labels = c("Grande (n = 70)", "Petite (n = 38)"), values=petitePalette2) +
     labs(x="Test Environment", y="Relative Fitness") +
@@ -207,6 +221,38 @@ met_pet=mydata7 %>%
     geom_vline(xintercept = 5.5) +
     geom_vline(xintercept = 6.5)
 #ggsave("figures/petite_test_environment.jpeg", width=8, height=6, units = "in", dpi=1000)
+```
+
+This study Petite t-test analysis
+```{r}
+
+t.test(relfit1 ~ petite, data = mydata7)
+
+petite_cd = mydata7 %>%
+  filter(E2==c("Cd")) 
+t.test(relfit1 ~ petite, data = petite_cd)
+
+petite_co = mydata7 %>%
+  filter(E2==c("Co")) 
+t.test(relfit1 ~ petite, data = petite_co)
+
+petite_cu = mydata7 %>%
+  filter(E2==c("Cu")) 
+t.test(relfit1 ~ petite, data = petite_cu)
+
+petite_mn = mydata7 %>%
+  filter(E2==c("Mn")) 
+t.test(relfit1 ~ petite, data = petite_mn)
+
+petite_ni = mydata7 %>%
+  filter(E2==c("Ni")) 
+t.test(relfit1 ~ petite, data = petite_ni)
+
+petite_zn = mydata7 %>%
+  filter(E2==c("Zn")) 
+t.test(relfit1 ~ petite, data = petite_zn)
+
+
 ```
 
 Plot all petite performace together
