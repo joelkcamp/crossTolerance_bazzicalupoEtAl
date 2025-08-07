@@ -1,0 +1,1713 @@
+---
+title: "03_cross_tol"
+output: html_document
+date: '2023-06-03'
+---
+
+```{r}
+library(tidyverse)
+library(broom)
+library(Rmisc)
+library(ggthemes)
+library(cowplot)
+library(dplyr)
+library(plyr)
+library(sjmisc)
+install.packages("wesanderson")
+library("wesanderson")
+```
+
+Setting color palette
+```{r}
+relfitPalette <- c("#787878", "#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+relfitPaletteDark <- c("darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
+relfitPaletteBoth = c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF","darkorange3", "dodgerblue4","darkgreen", "deeppink", "goldenrod1", "darkorchid4")
+pal <- wes_palette("Zissou1", 14, type = "continuous")
+
+pal2 <- c("#DFBF2B","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2","#3A9AB2")
+
+zissou10 = c("#3A9AB2", "#72B2BF", "#95BBB1", "#ADC397", "#CAC96A", "#DFBF2B", "#E5A208", "#EA8005", "#EE5A03", "#F11B00")
+
+legend_title1 <- "Test\nEnvironment"
+legend_title2 <- "Evolution\nEnvironment"
+legend_metal = "Environment"
+legend_met = "Metal"
+legend_dark = "With (light) or Without (dark)\nlines tested in their\nevolution metal"
+```
+
+Load data files
+```{r}
+
+x = getwd()
+setwd(x)
+
+mydata <- read.csv("mbm_intermediate_files/max_growth_MBM.csv") %>% 
+  na.omit()
+
+```
+
+E1 = evolution environment; E2 = test environment
+```{r}
+mydata <- mydata %>% 
+  dplyr::rename(
+    E2 = metal,
+    E1 = conc
+    )
+```
+
+
+Getting average max slopes from ancestor so we can calculate relative fitness
+```{r}
+OLY077_data <- mydata %>% 
+  filter(strain=="OLY077" | strain=="ypadOLY077") %>% 
+  arrange(E2) %>% 
+  select(strain, E2, maxSlope)
+  
+detach(package:Rmisc)
+detach(package:plyr)
+OLY077_data <- OLY077_data %>% 
+  dplyr::group_by(E2) %>% 
+  summarise(anc_slope = mean(maxSlope))
+```
+
+
+```{r}
+mydata3 <- merge(OLY077_data, mydata, by = 'E2')
+
+mydataOLY <- mydata3 %>% 
+  filter(strain=="ypadOLY077")
+
+mydata3 <- mydata3 %>% 
+  mutate(relfit = maxSlope - anc_slope)
+
+mydata3 <- mydata3 %>% 
+  mutate(E2 = case_when(E2 == "YPAD" ~ ".YPAD",
+                        E2 == "CD" ~ "Cd",
+                        E2 == "CO" ~ "Co",
+                        E2 == "CU" ~ "Cu",
+                        E2 == "MN" ~ "Mn",
+                        E2 == "NI" ~ "Ni",
+                        E2 == "ZN" ~ "Zn",
+                        )) %>% 
+  mutate(E1 = case_when(E1 == "YPAD" ~ ".YPAD",
+                        E1 == "cd" ~ "Cd",
+                        E1 == "co" ~ "Co",
+                        E1 == "cu" ~ "Cu",
+                        E1 == "mn" ~ "Mn",
+                        E1 == "ni" ~ "Ni",
+                        E1 == "zn" ~ "Zn",
+                        ))
+#write_csv(mydata3, "mbm_intermediate_files/mydata3.csv")
+```
+
+
+Averaging replicates of the same strain by environment
+```{r}
+#mydata3 = read_csv("mbm_intermediate_files/mydata3.csv")
+mydata6 <- mydata3 %>% 
+  select(strain, E1, E2, maxSlope, anc_slope) %>% 
+  arrange(strain, E1, E2) %>% 
+  group_by(strain, E1, E2, anc_slope) %>% 
+  summarise(avg_slope = mean(maxSlope)) %>% 
+  mutate(relfit1 = avg_slope - anc_slope)
+
+all_summary1 <- mydata6 %>% 
+  #filter(E2!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1", "E2"))
+# maybe add a row with YPAD to have zeros in the figures?
+
+abs_summary1 <- mydata6 %>% 
+  #filter(E2!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "avg_slope", groupvars = c("E1", "E2"))
+# maybe add a row with YPAD to have zeros in the figures?
+
+#write_csv(mydata6, "mbm_intermediate_files/mydata6.csv")
+```
+
+
+```{r}
+#mydata6 = read_csv("mbm_intermediate_files/mydata6.csv") # if starting from here, run all_summary1 from previous chunk
+
+diff_relfit=mydata6 %>%
+  group_by(strain) %>%
+  filter(strain!="OLY077") %>%
+  mutate(relfitdiff = avg_slope[E2 == E2] - avg_slope[E2 == E1]) %>%
+  mutate(relfitsim = 1-relfitdiff) # so that larger numbers are more pleiotropy and smaller numbers are less pleiotropy
+
+diff_summary1 <- diff_relfit %>% 
+  filter(E1!=".YPAD") %>% 
+  Rmisc::summarySE(measurevar = "relfitdiff", groupvars = c("E1", "E2"))
+```
+
+MAKE GRAPHS
+```{r}
+test_env_home=diff_relfit %>%
+  #na.omit() %>% 
+  filter(E1!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=relfitdiff,fill=E1)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+      geom_hline(yintercept=0, size=1.5)+
+stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=diff_summary1, aes(ymin = relfitdiff - se, ymax = relfitdiff + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_metal, values=relfitPalette2) +
+    labs(x="Test Environment", y="Relative\nFitness", title = "Relative to performance in the evolution environment") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(1))) +
+      annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#A880FF") +
+  geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+ggsave("figures/all_point_home.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+test_env_anc=mydata6 %>% # run all_summary1 from previous chunk 
+  #na.omit() %>% 
+  #filter(E1!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=E1)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+      geom_hline(yintercept=0, size=1.5)+
+stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=all_summary1, aes(ymin = relfit1 - se, ymax = relfit1 + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_metal, values=relfitPalette) +
+    labs(x="Test Environment", y="Relative\nFitness", title = "Relative to the performance of the ancestor") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(1))) +
+      annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.1, alpha=0.6,fill = "#A880FF") +
+  geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+
+
+ggsave("figures/all_point_anc.jpeg", width=8, height=6, units = "in", dpi=1000)
+
+
+
+test_env_abs=mydata6 %>% # run all_summary1 from previous chunk 
+  #na.omit() %>% 
+  #filter(E1!=".YPAD") %>% 
+  ggplot(aes(x=E2,y=avg_slope,fill=E1)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+      geom_hline(yintercept=0, size=1.5)+
+stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=abs_summary1, aes(ymin = avg_slope - se, ymax = avg_slope + se), width=0.75, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_metal, values=relfitPalette) +
+    labs(x="Test Environment", y="Absolute\nFitness", title = "Absolute Growth Rate") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(1))) +
+      annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -0.1, ymax = 0, alpha=0.6,fill = "#A880FF") +
+  geom_vline(xintercept = 1.5) + 
+    geom_vline(xintercept = 2.5) + 
+    geom_vline(xintercept = 3.5) + 
+    geom_vline(xintercept = 4.5) + 
+    geom_vline(xintercept = 5.5) +
+    geom_vline(xintercept = 6.5)
+
+
+ggsave("figures/all_point_abs.jpeg", width=8, height=6, units = "in", dpi=1000)
+```
+
+Looking by strain
+```{r}
+E1cd_data <- mydata6 %>% 
+  filter(E1 == "Cd")
+
+E1co_data <- mydata6 %>% 
+  filter(E1 == "Co")
+
+E1cu_data <- mydata6 %>% 
+  filter(E1 == "Cu")
+
+E1mn_data <- mydata6 %>% 
+  filter(E1 == "Mn")
+
+E1ni_data <- mydata6 %>% 
+  filter(E1 == "Ni")
+
+E1zn_data <- mydata6 %>% 
+  filter(E1 == "Zn")
+```
+
+
+```{r}
+cd_lines=E1cd_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain))  +
+  geom_path(color = "#FF9A17")+ 
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") + 
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Cadmium")+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+)
+#ggsave("cd_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+co_lines=E1co_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#3B83FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Cobalt")+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("co_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+cu_lines=E1cu_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#3EFF3B") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Copper")+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("cu_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+mn_lines=E1mn_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#FD73FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Manganese")+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("mn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+ni_lines=E1ni_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#FFF200") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Nickel")+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("ni_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+zn_lines=E1zn_data %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfit1, group=strain)) + 
+  geom_path(color="#A880FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.15, 0.18)+
+    labs(x="Test Environment",y="Relative\nFitness", title = "Evolved in Zinc")+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("zn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+```
+
+
+```{r}
+
+profiles=plot_grid(cd_lines,co_lines,cu_lines,mn_lines,ni_lines,zn_lines,ncol = 3, align = "v",labels = c("D","E","F","G","H", "I"))
+
+ggsave("figures/profiles.jpeg", width=10, height=7, units = "in", dpi=700) #
+
+```
+
+Looking by strain relative to home environmental
+
+```{r}
+
+
+E1cd_diff <- diff_relfit %>% 
+  filter(E1 == "Cd")
+
+E1co_diff <- diff_relfit %>% 
+  filter(E1 == "Co")
+
+E1cu_diff <- diff_relfit %>% 
+  filter(E1 == "Cu")
+
+E1mn_diff <- diff_relfit %>% 
+  filter(E1 == "Mn")
+
+E1ni_diff <- diff_relfit %>% 
+  filter(E1 == "Ni")
+
+E1zn_diff <- diff_relfit %>% 
+  filter(E1 == "Zn")
+```
+
+
+```{r}
+cd_lines_diff=E1cd_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain))  +
+  geom_path(color = "#FF9A17")+ 
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") + 
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+)
+#ggsave("cd_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+co_lines_diff=E1co_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#3B83FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("co_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+cu_lines_diff=E1cu_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#3EFF3B") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("cu_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+mn_lines_diff=E1mn_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#FD73FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("mn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+ni_lines_diff=E1ni_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#FFF200") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("ni_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+
+zn_lines_diff=E1zn_diff %>% 
+  #filter(E2!=".YPAD") %>% 
+  ggplot(aes(x=E2, y=relfitdiff, group=strain)) + 
+  geom_path(color="#A880FF") +
+  geom_point() + 
+  geom_hline(yintercept=0, size=1.5)+
+  labs(x=NULL, y=NULL, title="") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#787878") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FF9A17") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3B83FF") +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#3EFF3B") +
+  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FD73FF") +
+  annotate("rect", xmin = 5.5, xmax = 6.5, ymin = -Inf, ymax = -0.125, alpha=0.6,fill = "#FFF200") +
+  annotate("rect", xmin = 6.5, xmax = 7.5, ymin = -Inf, ymax = Inf, alpha=0.2,fill = "#A880FF") +
+  theme_minimal()+
+  ylim(-0.18, 0.25)+
+  theme(
+  axis.line.x = element_line(size = 1, color = "black"),
+  axis.text.x = element_text(size = 10, vjust = 1, face = "bold", color = "black"),
+  axis.text.y = element_text(size = 10, face = "bold", color = "black" )
+                              )
+
+#ggsave("zn_strains.jpeg", width=10, height=7, units = "in", dpi=700)
+```
+
+
+```{r}
+
+profiles_home=plot_grid(cd_lines_diff,co_lines_diff,cu_lines_diff,mn_lines_diff,ni_lines_diff,zn_lines_diff,ncol = 3, align = "v",labels = c("H","I","J","K", "L", "M"))
+
+ggsave("figures/profiles_home1.jpeg", width=10, height=7, units = "in", dpi=700) #
+```
+
+```{r}
+
+#cross_tol=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),test_env_home + theme(legend.position = "none"),ncol = 1, align = "h", labels = c("", "G","H"), rel_heights = c(2,1,1)) # + theme(legend.position = "none")
+
+#cross_tol1=plot_grid(profiles,test_env_anc+ theme(legend.position = "none"),profiles_home, ncol = 1, align = "h", labels = c("", "G",""), rel_heights = c(2,1,2))
+
+cross_tol1=plot_grid(test_env_abs+ theme(legend.position = "none"),test_env_anc+ theme(legend.position = "none"),test_env_home+ theme(legend.position = "none"), profiles, ncol = 1, align = "h", labels = c("A", "B","C", ""), rel_heights = c(1,1,1,2))
+
+
+#ggsave("figures/phenotypes1.jpeg", width=10, height=10, units = "in", dpi=700) # figure 2
+#ggsave("figures/phenotypes_abs.jpeg", width=10, height=12, units = "in", dpi=700) # figure 2
+ggsave("figures/phenotypes_all.jpeg", width=10, height=12, units = "in", dpi=700) # figure 2
+```
+
+Calulating narrow-scale cross-tolerance between a pair of metals (X and Y) is the average ratio of growth in the non-evolved env’t to the evolved env’t.  That is, cross-tolerance would be:
+
+CT(X,Y) = (r_Y|X/r_X|X + r_X|Y/r_Y|Y)/2
+
+where r_Y|X is growth rate assayed in metal Y given an evolutionary history in X.  
+
+This measure would be 1 if growth in both environments is as good for lines evolved in the other metal as for those evolved in that metal (i.e., r_Y|X = r_X|X and r_X|Y = r_Y|Y).  It is zero if there is no growth in the non-evolved metal environment (i.e., r_Y|X = r_X|Y = 0).  Also, if an environment is harsher (say metal X), with growth rates all lower by a factor c in that metal, then this doesn’t make a difference (c*r_Y|X/(c*r_X|X) = r_Y|X/r_X|X).
+
+```{r}
+ct_cal <- all_summary1 %>%
+    filter(E1!=".YPAD") %>%   
+  filter(E2!=".YPAD") 
+
+
+ct_cal$combo <- paste(ct_cal$E1, ct_cal$E2, sep= "")
+ 
+
+combo <- c("CdCo","CdCu","CdMn","CdNi","CdZn","CoCu","CoMn","CoNi","CoZn","CuMn","CuNi","CuZn","MnNi","MnZn","NiZn")
+met1 <- c("Cd","Cd","Cd","Cd","Cd","Co","Co","Co","Co","Cu","Cu","Cu","Mn","Mn","Ni")
+met2 <- c("Co","Cu","Mn","Ni","Zn","Cu","Mn","Ni","Zn","Mn","Ni","Zn","Ni","Zn","Zn")
+
+
+#combos = c("x_x", "x_y", "y_x", "y_y")
+
+# extract rel fit
+CDCO <- ct_cal %>%   
+  filter(combo %in% c("CdCd","CdCo","CoCd","CoCo")) %>%
+  select(relfit1)  
+CDCO <-  plyr::rename(CDCO, c("relfit1" = "CdCo" )) 
+CDCO <- data.frame(t(CDCO))
+CDCO <- plyr::rename(CDCO, c("X1" = "x_x")) 
+CDCO <-   plyr::rename(CDCO, c("X2" = "x_y"))
+CDCO <-   plyr::rename(CDCO, c("X3" = "y_x"))
+CDCO <-   plyr::rename(CDCO, c("X4" = "y_y"))
+CDCU <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdCu","CuCd","CuCu")) %>%
+  select(relfit1) 
+CDCU <- plyr::rename(CDCU, c("relfit1" = "CdCu"))
+CDCU <- data.frame(t(CDCU))
+CDCU <-   plyr::rename(CDCU, c("X1" = "x_x"))
+CDCU <-   plyr::rename(CDCU, c("X2" = "x_y"))
+CDCU <-   plyr::rename(CDCU, c("X3" = "y_x"))
+CDCU <-   plyr::rename(CDCU, c("X4" = "y_y"))
+CDMN <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdMn","MnCd","MnMn")) %>%
+  select(relfit1)
+CDMN  <- plyr::rename(CDMN, c("relfit1" = "CdMn" ))
+CDMN <- data.frame(t(CDMN)) 
+CDMN <-  plyr::rename(CDMN, c("X1" = "x_x")) 
+CDMN <-  plyr::rename(CDMN, c("X2" = "x_y")) 
+CDMN <-  plyr::rename(CDMN, c("X3" = "y_x")) 
+CDMN <-  plyr::rename(CDMN, c("X4" = "y_y"))
+CDNI <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdNi","NiCd","NiNi")) %>%
+  select(relfit1)
+CDNI  <- plyr::rename(CDNI, c("relfit1" = "CdNi" ))
+CDNI <- data.frame(t(CDNI)) 
+CDNI <-  plyr::rename(CDNI, c("X1" = "x_x")) 
+ CDNI <- plyr::rename(CDNI, c("X2" = "x_y")) 
+CDNI <-  plyr::rename(CDNI, c("X3" = "y_x")) 
+CDNI <-  plyr::rename(CDNI, c("X4" = "y_y"))
+CDZN <- ct_cal %>% 
+  filter(combo %in% c("CdCd","CdZn","ZnCd","ZnZn")) %>%
+  select(relfit1)
+CDZN  <- plyr::rename(CDZN, c("relfit1" = "CdZn" ))
+CDZN <- data.frame(t(CDZN)) 
+CDZN <-  plyr::rename(CDZN, c("X1" = "x_x")) 
+CDZN <-  plyr::rename(CDZN, c("X2" = "x_y")) 
+CDZN <-  plyr::rename(CDZN, c("X3" = "y_x")) 
+ CDZN <- plyr::rename(CDZN, c("X4" = "y_y"))
+COCU <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoCu","CuCo","CuCu")) %>%
+  select(relfit1)
+COCU  <- plyr::rename(COCU, c("relfit1" = "CoCu" ))
+COCU <- data.frame(t(COCU)) 
+COCU <-  plyr::rename(COCU, c("X1" = "x_x")) 
+COCU <-  plyr::rename(COCU, c("X2" = "x_y")) 
+COCU <-  plyr::rename(COCU, c("X3" = "y_x")) 
+COCU <-  plyr::rename(COCU, c("X4" = "y_y"))
+COMN <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoMn","MnCo","MnMn")) %>%
+  select(relfit1)
+COMN  <- plyr::rename(COMN, c("relfit1" = "CoMn" ))
+COMN <- data.frame(t(COMN)) 
+COMN <-  plyr::rename(COMN, c("X1" = "x_x")) 
+COMN <-  plyr::rename(COMN, c("X2" = "x_y")) 
+COMN <-  plyr::rename(COMN, c("X3" = "y_x")) 
+COMN <-  plyr::rename(COMN, c("X4" = "y_y"))
+CONI <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoNi","NiCo","NiNi")) %>%
+  select(relfit1)
+CONI  <- plyr::rename(CONI, c("relfit1" = "CoNi" ))
+CONI <- data.frame(t(CONI)) 
+CONI <-  plyr::rename(CONI, c("X1" = "x_x")) 
+CONI <-  plyr::rename(CONI, c("X2" = "x_y")) 
+CONI <-  plyr::rename(CONI, c("X3" = "y_x")) 
+CONI <-  plyr::rename(CONI, c("X4" = "y_y"))
+COZN <- ct_cal %>% 
+  filter(combo %in% c("CoCo","CoZn","ZnCo","ZnZn")) %>%
+  select(relfit1)
+COZN  <- plyr::rename(COZN, c("relfit1" = "CoZn" ))
+COZN <- data.frame(t(COZN)) 
+COZN <-  plyr::rename(COZN, c("X1" = "x_x")) 
+COZN <-  plyr::rename(COZN, c("X2" = "x_y")) 
+COZN <-  plyr::rename(COZN, c("X3" = "y_x")) 
+ COZN <- plyr::rename(COZN, c("X4" = "y_y"))
+CUMN <- ct_cal %>% 
+  filter(combo %in% c("CuCu","CuMn","MnCu","MnMn")) %>%
+  select(relfit1)
+CUMN  <- plyr::rename(CUMN, c("relfit1" = "CuMn" ))
+CUMN <- data.frame(t(CUMN)) 
+CUMN <-  plyr::rename(CUMN, c("X1" = "x_x")) 
+CUMN <-  plyr::rename(CUMN, c("X2" = "x_y")) 
+CUMN <-  plyr::rename(CUMN, c("X3" = "y_x")) 
+CUMN <-  plyr::rename(CUMN, c("X4" = "y_y"))
+CUNI <- ct_cal %>% 
+  filter(combo %in% c("CuCu","CuNi","NiCu","NiNi")) %>%
+  select(relfit1)
+CUNI  <- plyr::rename(CUNI, c("relfit1" = "CuNi" ))
+CUNI <- data.frame(t(CUNI)) 
+CUNI <-  plyr::rename(CUNI, c("X1" = "x_x")) 
+CUNI <-  plyr::rename(CUNI, c("X2" = "x_y")) 
+CUNI <-  plyr::rename(CUNI, c("X3" = "y_x")) 
+CUNI <-  plyr::rename(CUNI, c("X4" = "y_y"))
+CUZN <- ct_cal %>% 
+  filter(combo %in% c("CuCu","CuZn","ZnCu","ZnZn")) %>%
+  select(relfit1)
+CUZN  <- plyr::rename(CUZN, c("relfit1" = "CuZn" ))
+CUZN <- data.frame(t(CUZN)) 
+CUZN <-  plyr::rename(CUZN, c("X1" = "x_x")) 
+CUZN <-  plyr::rename(CUZN, c("X2" = "x_y")) 
+CUZN <-  plyr::rename(CUZN, c("X3" = "y_x")) 
+CUZN <-  plyr::rename(CUZN, c("X4" = "y_y"))
+MNNI <- ct_cal %>% 
+  filter(combo %in% c("MnMn","MnNi","NiMn","NiNi")) %>%
+  select(relfit1)
+MNNI  <- plyr::rename(MNNI, c("relfit1" = "MnNi" ))
+MNNI <- data.frame(t(MNNI))
+MNNI <-  plyr::rename(MNNI, c("X1" = "x_x")) 
+MNNI <-  plyr::rename(MNNI, c("X2" = "x_y")) 
+MNNI <-  plyr::rename(MNNI, c("X3" = "y_x")) 
+MNNI <-  plyr::rename(MNNI, c("X4" = "y_y"))
+MNZN <- ct_cal %>% 
+  filter(combo %in% c("MnMn","MnZn","ZnMn","ZnZn")) %>%
+  select(relfit1)
+MNZN  <- plyr::rename(MNZN, c("relfit1" = "MnZn" ))
+MNZN <- data.frame(t(MNZN)) 
+MNZN <-  plyr::rename(MNZN, c("X1" = "x_x")) 
+MNZN <-  plyr::rename(MNZN, c("X2" = "x_y")) 
+MNZN <-  plyr::rename(MNZN, c("X3" = "y_x")) 
+MNZN <-  plyr::rename(MNZN, c("X4" = "y_y"))
+NIZN <- ct_cal %>% 
+  filter(combo %in% c("NiNi","NiZn","ZnNi","ZnZn")) %>%
+  select(relfit1)
+NIZN  <- plyr::rename(NIZN, c("relfit1" = "NiZn"))
+NIZN <- data.frame(t(NIZN)) 
+NIZN <-  plyr::rename(NIZN, c("X1" = "x_x"))  #NiNi
+NIZN <-  plyr::rename(NIZN, c("X2" = "x_y"))  #NiZn
+NIZN <-  plyr::rename(NIZN, c("X3" = "y_x")) 
+NIZN <-  plyr::rename(NIZN, c("X4" = "y_y"))
+
+combo <- c("CdCo","CdCu","CdMn","CdNi","CdZn","CoCu","CoMn","CoNi","CoZn","CuMn","CuNi","CuZn","MnNi","MnZn","NiZn")
+
+cross.tol.combos = rbind(CDCO,CDCU,CDMN,CDNI,CDZN,COCU,COMN,CONI,COZN,CUMN,CUNI,CUZN,MNNI,MNZN,NIZN)
+
+
+#CT(X,Y) = (r_Y|X/r_X|X + r_X|Y/r_Y|Y)/2
+# in this equation r_Y|X
+
+
+cross.tol.combos = cross.tol.combos %>% 
+  mutate(ct = ((x_y/x_x) + (y_x/y_y))/2) %>%
+  cbind(combo)
+
+
+write_csv(cross.tol.combos, "mbm_intermediate_files/pairs_cross_tolerance.csv")
+
+```
+
+Broad-scale cross-tolerance is calculated as the average relative performance of lines across all metals except their evolutionary environment X (CT(X))
+
+
+```{r}
+
+
+
+ct_x <- mydata6 %>% 
+  filter(E2!=".YPAD") %>% # remove measurements in YPAD
+  filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("strain"))
+
+write_csv(ct_x, "mbm_intermediate_files/broad_cross_tolerance.csv")
+
+
+#average by metal 
+
+ct_x$E1<- substr(ct_x$strain, 1, 2)
+ct_x %>% group_by(E1) %>% summarise(mean(relfit1))
+```
+
+Add column with info about 9 genes with multiple SNPs
+
+```{r}
+ct_x = read.csv("mbm_intermediate_files/broad_cross_tolerance.csv")
+ct_x$mutation = NA
+
+
+
+
+ct_x <- ct_x %>% 
+  mutate(mutation = case_when(strain == "mnbm_21" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_25" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_18" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_23" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_24" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_27" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_20" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_15" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_32" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_42" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_45" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_46" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_47" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_30" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_13" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_31" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_16" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_17" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_12" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_18" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_47" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_43" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_8" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_29" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_30" ~ "gene with ≥3 SNP mutations",
+                            strain == "cdbm_25" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_7" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_2" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_20" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_17" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_16" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_18" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_28" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_12" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_29" ~ "gene with ≥3 SNP mutations",
+                            strain == "mnbm_14" ~ "gene with ≥3 SNP mutations",
+                            strain == "nibm_14" ~ "gene with ≥3 SNP mutations",
+                            strain == "nibm_11" ~ "gene with ≥3 SNP mutations",
+                            strain == "nibm_9" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_11" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_38" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_42" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_1" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_37" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_45" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_46" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_29" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_41" ~ "gene with ≥3 SNP mutations",
+                            strain == "znbm_17" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_21" ~ "gene with ≥3 SNP mutations",
+                            strain == "cobm_7" ~ "gene with ≥3 SNP mutations",
+                            strain == "cubm_3" ~ "gene with ≥3 SNP mutations",
+                        )) 
+ct_x[is.na(ct_x)] <- "gene with <3 SNP mutations"
+
+
+ct_x_summ_mut <- ct_x %>% 
+  filter(mutation!="mutator") %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("mutation"))
+
+
+
+ct_x$gene = NA
+
+
+
+ct_x <- ct_x %>% 
+  mutate(gene = case_when(strain == "mnbm_21" ~ "CDC25",
+                            strain == "mnbm_25" ~ "CDC25",
+                            strain == "mnbm_18" ~ "CDC25",
+                            strain == "mnbm_23" ~ "CDC25",
+                            strain == "mnbm_24" ~ "CDC25",
+                            strain == "mnbm_27" ~ "CDC25",
+                            strain == "mnbm_20" ~ "CDC25",
+                            strain == "mnbm_15" ~ "CDC25",
+                            strain == "mnbm_32" ~ "CDC25",
+                            
+                          strain == "mnbm_42" ~ "YOR1",##
+                          strain == "cdbm_32" ~ "YOR1",
+                          strain == "mnbm_14" ~ "YOR1",##
+                          
+                            strain == "cdbm_45" ~ "HUL5",
+                            strain == "cdbm_46" ~ "HUL5",
+                            strain == "cdbm_47" ~ "HUL5",
+                            strain == "cdbm_30" ~ "HUL5",##
+                          #strain == "mnbm_42" ~ "HUL5",##
+                          
+                            strain == "mnbm_13" ~ "MAM3",
+                            strain == "mnbm_31" ~ "MAM3",
+                            strain == "mnbm_16" ~ "MAM3",
+                            strain == "mnbm_17" ~ "MAM3",
+                            strain == "cobm_12" ~ "MAM3",
+                            strain == "cobm_18" ~ "MAM3",##
+                          
+                            strain == "znbm_47" ~ "PTK2",
+                            strain == "znbm_43" ~ "PTK2",
+                            strain == "cobm_8" ~ "PTK2",
+                          
+                            strain == "cdbm_29" ~ "SFP1",
+                           # strain == "cdbm_30" ~ "SFP1",##
+                            strain == "cdbm_25" ~ "SFP1",
+                            strain == "cobm_7" ~ "SFP1", ##
+                          
+                            strain == "cobm_2" ~ "SIW14",
+                            strain == "cobm_20" ~ "SIW14",
+                            strain == "cobm_17" ~ "SIW14",
+                            strain == "cobm_16" ~ "SIW14",
+                           # strain == "cobm_18" ~ "SIW14",##
+                          
+                            strain == "mnbm_28" ~ "VCX1",
+                            strain == "mnbm_12" ~ "VCX1",
+                            strain == "mnbm_29" ~ "VCX1",
+                        #  strain == "mnbm_14" ~ "VCX1",##
+
+                            strain == "nibm_4" ~ "PHO84",
+                            strain == "nibm_11" ~ "PHO84",
+                            strain == "nibm_9" ~ "PHO84",
+                            strain == "znbm_11" ~ "PHO84",
+                            strain == "znbm_38" ~ "PHO84",
+                            strain == "znbm_42" ~ "PHO84",
+                            strain == "cobm_1" ~ "PHO84",
+                          
+                            strain == "znbm_37" ~ "PMA1",
+                            strain == "znbm_45" ~ "PMA1",
+                            strain == "znbm_46" ~ "PMA1",
+                            strain == "znbm_29" ~ "PMA1",
+                            strain == "znbm_41" ~ "PMA1",
+                            strain == "znbm_17" ~ "PMA1",
+                            strain == "cobm_21" ~ "PMA1",
+                          # strain == "cobm_7" ~ "PMA1", ##
+                            strain == "cubm_3" ~ "PMA1",
+                          
+                          strain == "cobm_3" ~ "VTC4",
+                          strain == "cobm_2" ~ "VTC4",
+                          strain == "cobm_6" ~ "VTC4",
+                          
+                          strain == "cobm_21" ~ "VTC5",
+                          strain == "cobm_4" ~ "VTC5",
+                         # strain == "cdbm_30" ~ "VTC5",##
+                          strain == "cobm_15" ~ "VTC5",
+                          
+                          strain == "mnbm_14" ~ "YGR130C",##
+                          
+          
+                        )) 
+
+mn42 = c("mnbm_42",
+5,
+0.0167083034,
+0.042084356,
+0.0188206964,
+0.052254630, "gene with ≥3 SNP mutations","HUL5")
+
+mn14_1 = c("mnbm_14",
+5,
+0.0327898095,
+0.082120312,
+0.0367253200,
+0.101965835, "gene with ≥3 SNP mutations","VCX1")
+mn14_2 = c("mnbm_14",
+5,
+0.0327898095,
+0.082120312,
+0.0367253200,
+0.101965835, "gene with ≥3 SNP mutations","YGR130C")
+cd30_1 = c("cdbm_30",
+5,
+0.0167164326,
+0.024775732,
+0.0110800441,
+0.030763134, "gene with ≥3 SNP mutations","SFP1")
+cd30_2 = c("cdbm_30",
+5,
+0.0167164326,
+0.024775732,
+0.0110800441,
+0.030763134, "gene with ≥3 SNP mutations","VTC5")
+co18 = c("cobm_18",
+5,
+0.0413293637,
+0.044058443,
+0.0197035347,
+0.054705782, "gene with ≥3 SNP mutations","SIW14")
+co7 = c("cobm_7",
+5,
+0.0970299424,
+0.055952377,
+0.0250226635,
+0.069474052, "gene with ≥3 SNP mutations","PMA1")
+
+ct_x = rbind(ct_x, mn42, mn14_1, mn14_2, cd30_1, cd30_2, co18, co7)
+
+
+ct_x[is.na(ct_x)] <- "<3 SNP"
+
+ct_x$relfit1 = as.numeric(ct_x$relfit1)
+
+ct_x_summ_gene <- ct_x %>% 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("gene"))
+
+
+
+
+
+ct_x %>%
+  na.omit() %>% 
+  filter(mutation!="mutator") %>% 
+  filter(gene!="mutator") %>% 
+  ggplot(aes(x=mutation,y=relfit1,fill=mutation)) +
+    geom_point(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=mutation)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=ct_x_summ_mut, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values=relfitPaletteDark) +
+    #scale_fill_manual(legend_title_none, limits = c("Non-petite (n = 70)", "Petite (n =38)"),labels = c("Grande (n = 70)", "Petite (n = 38)"), values=petitePalette2) +
+    labs(x="Mutations", y="Broad-scale cross-tolerance") +
+    theme_bw() +  geom_hline(yintercept=0, size=1)+
+    theme(legend.title=element_text(size=rel(0.75))) #+
+
+ggsave("figures/geneall3SNPs.jpeg", width=14, height=10, units = "in", dpi=700) #
+
+
+ct_x %>%
+  na.omit() %>% 
+  ggplot(aes(x=gene,y=relfit1,fill=gene, group=gene)) +
+    geom_point(alpha=0.2, size=1.5, position=position_dodge(width=0.75),aes(group=gene)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=8,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=ct_x_summ_gene, aes(ymin = relfit1 - se, ymax = relfit1 + se), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values = pal2) +
+    labs(x="Mutations", y="Broad-scale cross-tolerance")+
+    theme(labs.title=element_text(size=rel(1.1))) +
+    theme_bw() +  geom_hline(yintercept=0, size=2)+
+    theme(axis.title=element_text(size=rel(2)))+
+    theme(axis.text=element_text(size=rel(1.75)))+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.1))+ theme(legend.position = "none")
+ggsave("figures/gene3SNPsSE.jpeg", width=9, height=7, units = "in", dpi=700) #
+
+
+ct_x %>%
+  na.omit() %>% 
+  filter(mutation!="mutator") %>% 
+  filter(gene!="mutator") %>% 
+  ggplot(aes(x=gene,y=relfit1,fill=gene)) +
+    geom_point(alpha=0.2, size=1, position=position_dodge(width=0.75),aes(group=gene)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=7,
+             position=position_dodge2(width=0.75, preserve="single")) +
+    geom_errorbar(data=ct_x_summ_gene, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.05, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(values = pal2) +
+    labs(x="Mutations", y="Broad-scale cross-tolerance")+
+    theme(labs.title=element_text(size=rel(1.5)))+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    theme_bw() +  geom_hline(yintercept=0, size=2)+ theme(legend.position = "none") #+
+ggsave("figures/gene3SNPsCI.jpeg", width=13, height=10, units = "in", dpi=700) #
+
+ct_x_test = ct_x %>% 
+    filter(mutation!="mutator") 
+t.test(relfit1 ~ mutation, data = ct_x_test)
+
+ct_less3 = ct_x %>%
+  filter(gene==c("<3 SNP")) 
+
+ct_CDC25 = ct_x %>%
+  filter(gene==c("CDC25"))  %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_CDC25)
+
+ct_HUL5 = ct_x %>%
+  filter(gene==c("HUL5")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_HUL5)
+
+ct_MAM3 = ct_x %>%
+  filter(gene==c( "MAM3")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_MAM3)
+
+ct_PHO84 = ct_x %>%
+  filter(gene==c("PHO84")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_PHO84)
+
+ct_PMA1 = ct_x %>%
+  filter(gene==c("PMA1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_PMA1)
+
+ct_PTK2 = ct_x %>%
+  filter(gene==c("PTK2")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_PTK2)
+
+ct_SFP1 = ct_x %>%
+  filter(gene==c("SFP1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_SFP1)
+
+ct_SIW14 = ct_x %>%
+  filter(gene==c("SIW14")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_SIW14)
+
+ct_VCX1 = ct_x %>%
+  filter(gene==c("VCX1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_VCX1)
+
+ct_VTC4 = ct_x %>%
+  filter(gene==c("VTC4")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_VTC4)
+
+ct_YOR1 = ct_x %>%
+  filter(gene==c("YOR1")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_YOR1)
+
+ct_VTC5 = ct_x %>%
+  filter(gene==c("VTC5")) %>%
+  rbind(ct_less3)
+t.test(relfit1 ~ gene, data = ct_VTC5)
+
+
+```
+
+
+
+```{r}
+react.norm = mydata6 
+
+```
+
+
+Violin plots by evolution environment and by test environment
+```{r}
+E2_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E2"))
+
+E1_summary <- react.norm %>% 
+  filter(E1!=".YPAD") %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1")) 
+
+plot_E2vio=react.norm %>%
+  #na.omit() %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% 
+  ggplot(aes(x=E2,y=relfit1,fill=E2)) +
+    geom_violin(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E2)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.5, preserve="single")) +
+    geom_errorbar(data=E2_summary, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.25, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_met, values=relfitPaletteDark) +
+    labs(x="Test Environment", y="Relative Growth Rate", title = "By Test Environment") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(0.75))) 
+
+plot_E1vio=react.norm %>%
+  #na.omit() %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E1!=".YPAD") %>% 
+  filter(E2!=E1) %>% 
+  ggplot(aes(x=E1,y=relfit1,fill=E1)) +
+    geom_violin(alpha=0.2, size=0.5, position=position_dodge(width=0.75),aes(group=E1)) + 
+    stat_summary(fun=mean, geom="point", shape=21, size=4,
+             position=position_dodge2(width=0.5, preserve="single")) +
+    geom_errorbar(data=E1_summary, aes(ymin = relfit1 - ci, ymax = relfit1 + ci), width=0.25, position=position_dodge2(width=0.75, preserve="single")) +
+    scale_fill_manual(legend_met, values=relfitPaletteDark) +
+    labs(x="Evolution Environment", y="Relative Growth Rate", title = "By Evolution Environment") +
+    theme_bw() +
+    theme(legend.title=element_text(size=rel(0.75)))
+
+
+axes_E12=plot_grid(
+  plot_E1vio+ theme(legend.position = "none"), plot_E2vio+ theme(legend.position = "none"), labels = c("H","I"),
+  ncol = 1, align = "v"
+)
+
+#ggsave("figures/violin_environments1.jpeg", width=10, height=7, units = "in", dpi=700)
+
+```
+
+
+Genotype quality against environemnt quality:
+```{r}
+
+allE2_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  #filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E2"))
+
+nosameE2_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E2!=E1) %>% # all lines tested in all environments excet evolution environment
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E2"))
+
+
+allE1_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E1!=".YPAD") %>% 
+  #filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1")) 
+
+nosameE1_summary <- react.norm %>% 
+  filter(E2!=".YPAD") %>% 
+  filter(E1!=".YPAD") %>% 
+  filter(E2!=E1) %>% # 
+  Rmisc::summarySE(measurevar = "relfit1", groupvars = c("E1"))
+
+
+allE1_summary$relfit1E2 <- allE2_summary$relfit1[match(allE1_summary$E1,allE2_summary$E2)]
+allE1_summary$sdE2 <- allE2_summary$sd[match(allE1_summary$E1,allE2_summary$E2)]
+allE1_summary$seE2 <- allE2_summary$se[match(allE1_summary$E1,allE2_summary$E2)]
+allE1_summary$ciE2 <- allE2_summary$ci[match(allE1_summary$E1,allE2_summary$E2)]
+
+allE1_summary[allE1_summary == "Cd"] <- ".Cd"
+allE1_summary[allE1_summary == "Co"] <- ".Co"
+allE1_summary[allE1_summary == "Cu"] <- ".Cu"
+allE1_summary[allE1_summary == "Mn"] <- ".Mn"
+allE1_summary[allE1_summary == "Ni"] <- ".Ni"
+allE1_summary[allE1_summary == "Zn"] <- ".Zn"
+
+nosameE1_summary$relfit1E2 <- nosameE2_summary$relfit1[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+nosameE1_summary$sdE2 <- nosameE2_summary$sd[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+nosameE1_summary$seE2 <- nosameE2_summary$se[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+nosameE1_summary$ciE2 <- nosameE2_summary$ci[match(nosameE1_summary$E1,nosameE2_summary$E2)]
+
+
+qualDark = nosameE1_summary %>%
+  #arrange(E1) %>% 
+  ggplot(aes(x=relfit1,y=relfit1E2,color=E1)) +
+  geom_point(alpha=0.8, size=5, aes(group=E1))+
+  #geom_point(data = ) + # too many points with the all lines?
+    geom_hline(yintercept=0, size=1)+
+    geom_vline(xintercept=0, size=1)+ 
+  scale_color_manual(legend_metal, values=relfitPaletteDark) +
+  guides(color=guide_legend(ncol=2))+ 
+    labs(x="Performance by Evolution Evironment", y="Performance by\nTest Evironment")+
+    theme_bw() +
+    #xlim(-0.001,0.053)+
+    #ylim(-0.005,0.063)+
+    theme(legend.title=element_text(size=rel(0.75)))+ 
+    geom_errorbar(aes(ymin = relfit1E2 - ciE2, ymax = relfit1E2 + ciE2)) + 
+    geom_errorbarh(aes(xmin = relfit1 + ci, xmax = relfit1 - ci))
+
+qualLight = allE1_summary %>%
+  #arrange(E1) %>% 
+  ggplot(aes(x=relfit1,y=relfit1E2,color=E1))+
+  geom_point(alpha=0.8, size=5, aes(group=E1))+
+  #geom_point(data = ) + # too many points with the all lines?
+    geom_hline(yintercept=0, size=1)+
+    geom_vline(xintercept=0, size=1)+ 
+  scale_color_manual(legend_metal, values=relfitPalette2) +
+  guides(color=guide_legend(ncol=2))+ 
+    labs(x="Performance by Evolution Evironment", y="Performance by\nTest Evironment")+
+    theme_bw() +
+    #xlim(-0.001,0.053)+
+    #ylim(-0.005,0.063)+
+    theme(legend.title=element_text(size=rel(0.75)))+ 
+    geom_errorbar(aes(ymin = relfit1E2 - ciE2, ymax = relfit1E2 + ciE2)) + 
+    geom_errorbarh(aes(xmin = relfit1 + ci, xmax = relfit1 - ci))
+
+plot_grid(qualLight,qualDark, labels = c("A","B"), ncol = 1, align = "h")
+
+ggsave("figures/qualityGenEnv.jpeg", width=8, height=8, units = "in", dpi=700)
+```
+
+
+
+Is there a relationship linear for cross-tolerance between E1 and E2, environment vs genotype quality?
+
+```{r}
+dark = lm(relfit1E2~relfit1,data=nosameE1_summary)
+light = lm(relfit1E2~relfit1,data=allE1_summary)
+summary(dark)
+summary(light)
+```
+
+
+
+
+Filter Reaction norms of metal pairs
+```{r}
+react.norm$combo <- paste(react.norm$E1, react.norm$E2, sep= "")
+
+CDCO <- react.norm %>%   
+  filter(combo %in% c("CdCd","CdCo","CoCd","CoCo"))
+CDCU <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdCu","CuCd","CuCu"))
+CDMN <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdMn","MnCd","MnMn"))
+CDNI <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdNi","NiCd","NiNi"))
+CDZN <- react.norm %>% 
+  filter(combo %in% c("CdCd","CdZn","ZnCd","ZnZn"))
+COCU <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoCu","CuCo","CuCu"))
+COMN <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoMn","MnCo","MnMn"))
+CONI <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoNi","NiCo","NiNi"))
+COZN <- react.norm %>% 
+  filter(combo %in% c("CoCo","CoZn","ZnCo","ZnZn"))
+CUMN <- react.norm %>% 
+  filter(combo %in% c("CuCu","CuMn","MnCu","MnMn"))
+CUNI <- react.norm %>% 
+  filter(combo %in% c("CuCu","CuNi","NiCu","NiNi"))
+CUZN <- react.norm %>% 
+  filter(combo %in% c("CuCu","CuZn","ZnCu","ZnZn"))
+MNNI <- react.norm %>% 
+  filter(combo %in% c("MnMn","MnNi","NiMn","NiNi"))
+MNZN <- react.norm %>% 
+  filter(combo %in% c("MnMn","MnZn","ZnMn","ZnZn"))
+NIZN <- react.norm %>% 
+  filter(combo %in% c("NiNi","NiZn","ZnNi","ZnZn"))
+```
+Anovas for pairs of metals
+```{r}
+aov_results <- list(
+
+aov_CDCO <- aov(relfit1 ~ E1*E2, data = CDCO),
+aov_CDCU <- aov(relfit1 ~ E1*E2, data = CDCU),
+aov_CDMN <- aov(relfit1 ~ E1*E2, data = CDMN),
+aov_CDNI <- aov(relfit1 ~ E1*E2, data = CDNI),
+aov_CDZN <- aov(relfit1 ~ E1*E2, data = CDZN),
+aov_COCU <- aov(relfit1 ~ E1*E2, data = COCU),
+aov_COMN <- aov(relfit1 ~ E1*E2, data = COMN),
+aov_CONI <- aov(relfit1 ~ E1*E2, data = CONI),
+aov_COZN <- aov(relfit1 ~ E1*E2, data = COZN),
+aov_CUMN <- aov(relfit1 ~ E1*E2, data = CUMN),
+aov_CUNI <- aov(relfit1 ~ E1*E2, data = CUNI),
+aov_CUZN <- aov(relfit1 ~ E1*E2, data = CUZN),
+aov_MNNI <- aov(relfit1 ~ E1*E2, data = MNNI),
+aov_MNZN <- aov(relfit1 ~ E1*E2, data = MNZN),
+aov_NIZN <- aov(relfit1 ~ E1*E2, data = NIZN)
+
+)
+
+# Convert ANOVA results to a data frame
+aov_df <- map_df(aov_results, tidy, .id = "data")
+
+
+# adjust the p-values using the Benjamini-Hochberg method
+aov_df$adj_p.value <- p.adjust(aov_df$p.value, method = "BH")
+
+aov_df$data[aov_df$data == "1"]  <- "CDCO"
+aov_df$data[aov_df$data == "2"]  <- "CDCU"
+aov_df$data[aov_df$data == "3"]  <- "CDMN"
+aov_df$data[aov_df$data == "4"]  <- "CDNI"
+aov_df$data[aov_df$data == "5"]  <- "CDZN"
+aov_df$data[aov_df$data == "6"]  <- "COCU"
+aov_df$data[aov_df$data == "7"]  <- "COMN"
+aov_df$data[aov_df$data == "8"]  <- "CONI"
+aov_df$data[aov_df$data == "9"]  <- "COZN"
+aov_df$data[aov_df$data == "10"] <- "CUMN"
+aov_df$data[aov_df$data == "11"] <- "CUNI"
+aov_df$data[aov_df$data == "12"] <- "CUZN"
+aov_df$data[aov_df$data == "13"] <- "MNNI"
+aov_df$data[aov_df$data == "14"] <- "MNZN"
+aov_df$data[aov_df$data == "15"] <- "NIZN"
+
+write_csv(aov_df, "mbm_intermediate_files/aov_df_reactnorms_aov.csv")
+
+
+```
+
+Plot norms of metal pairs
+```{r}
+#relfitPalette2 <- c("#FF9A17", "#3B83FF","#3EFF3B", "#FD73FF", "#FFF200", "#A880FF")
+
+plotCDCO=ggplot(CDCO,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#3B83FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+plotCDCU=ggplot(CDCU,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - s\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#3EFF3B"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCDMN=ggplot(CDMN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#FD73FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+plotCDNI=ggplot(CDNI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - ns\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+plotCDZN=ggplot(CDZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FF9A17", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+# COBALT
+
+plotCOCU=ggplot(COCU,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#3EFF3B"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCOMN=ggplot(COMN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#FD73FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCONI=ggplot(CONI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCOZN=ggplot(COZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+    geom_text(x=1.5, y=0.12, label="EE - ns\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+ geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3B83FF", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+# COPPER
+
+plotCUMN=ggplot(CUMN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - s\nTE - s\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3EFF3B", "#FD73FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCUNI=ggplot(CUNI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - s\nTE - ns\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3EFF3B", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotCUZN=ggplot(CUZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - s",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#3EFF3B", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+# MANGANESE
+
+plotMNNI=ggplot(MNNI,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+     geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FD73FF", "#FFF200"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+plotMNZN=ggplot(MNZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+   geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+  geom_point(alpha=0.7)+
+  stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+   ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FD73FF", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+#Nickel Zinc
+
+plotNIZN=ggplot(NIZN,aes(E2,relfit1,colour=E1))+
+  theme_bw()+
+   geom_text(x=1.5, y=0.12, label="EE - ns\nTE - s\nEE*TE - ns",show.legend = FALSE, color="black",size=3)+
+  geom_point(alpha=0.7)+
+ stat_summary(aes(color = E1), fun = mean, geom = "point", size = 3) +
+  stat_summary(aes(group = E1), geom = "line", fun = mean) + 
+  stat_summary(aes(color = E1),
+    geom="errorbar", 
+    fun.data= mean_cl_boot, 
+    width = 0.1, size = 0.5) +
+  ylim(-0.025,0.16)+
+  theme(axis.text.x  = element_text(size=10))+
+  theme(axis.text.y  = element_text(size=8))+
+  # assigning customised colours to the plot
+  scale_color_manual(values = c("#FFF200", "#A880FF"), name=NULL) +
+  xlab(NULL)+
+  ylab(NULL)
+
+
+```
+
+Plot all reaction norms together
+```{r}
+
+# extract legends from the plots
+legendCDCO <- get_legend(plotCDCO)
+legendCUMN <- get_legend(plotCUMN)
+legendNIZN <- get_legend(plotNIZN)
+
+react_norms_all = plot_grid(
+  plotCDCO+ theme(legend.position = "none"),plotCDCU+ theme(legend.position = "none"),plotCDMN+ theme(legend.position = "none"),plotCDNI+ theme(legend.position = "none"),plotCDZN+ theme(legend.position = "none"),plotCOCU+ theme(legend.position = "none"),plotCOMN+ theme(legend.position = "none"),plotCONI+ theme(legend.position = "none"),plotCOZN+ theme(legend.position = "none"),plotCUMN+ theme(legend.position = "none"),plotCUNI+ theme(legend.position = "none"),plotCUZN+ theme(legend.position = "none"),plotMNNI+ theme(legend.position = "none"),plotMNZN+ theme(legend.position = "none"),plotNIZN+ theme(legend.position = "none"), labels = c("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O"),
+  ncol = 5, align = "v"
+)
+ggsave("figures/reactnorm_suppl.jpeg", width=12, height=10, units = "in", dpi=700)
+```
+
+#test predictions against narrow cross tol
+```{r}
+predictions <- read.csv("predictions_TS12.csv")
+prediction_lms <- cross.tol.combos %>% left_join(predictions)
+
+prediction_lms %>% 
+  ggplot(aes(x=prop.syn,y=ct)) +
+  geom_point() +
+  theme_bw()
+prediction_lms %>% 
+  ggplot(aes(x=ORP,y=ct)) +
+  geom_point() +
+  theme_bw()
+prediction_lms %>% 
+  ggplot(aes(x=all_slope,y=ct)) +
+  geom_point() +
+  theme_bw()
+```
+
+
+

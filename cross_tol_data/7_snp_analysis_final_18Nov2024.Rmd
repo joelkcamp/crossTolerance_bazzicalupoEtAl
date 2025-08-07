@@ -27,17 +27,17 @@ mel_haploid$SOR <- as.numeric(mel_haploid$SOR)
 mel_haploid$MQ <- as.numeric(mel_haploid$MQ)
 
 #removing low quality sites
-mel_raw00 <- mel_haploid %>% 
+mel_raw1 <- mel_haploid %>% 
   filter(QD > 4)
-mel_raw00 <- mel_raw00 %>% 
+mel_raw2 <- mel_raw1 %>% 
   filter(FS < 50)
-mel_raw00 <- mel_raw00 %>% 
+mel_raw3 <- mel_raw2 %>% 
   filter(SOR < 4)
-mel_raw00 <- mel_raw00 %>% 
+mel_raw4 <- mel_raw3 %>% 
   filter(MQ > 50)
   
 #removing sites with multiple alternates
-mel_raw00 <- mel_raw00 %>% 
+mel_raw00 <- mel_raw4 %>% 
   filter(!grepl(",", ALT))
 
 # Loop over each column
@@ -78,9 +78,14 @@ GTs_by_line <- mel_filtered %>%
 GTs_by_site <- GTs_by_line %>%
   select(CHROM,POS,genotype) %>% 
   distinct() 
+
+GTs_by_site_count <- GTs_by_line %>% 
+  group_by(CHROM, POS, genotype) %>% 
+  summarize(num=n())
 #which sites only have low coverage and one other genotype?
 GTs_summary_RMlowcoverage <- GTs_by_site %>% 
   filter(genotype!=".") %>% 
+  filter(!is.na(genotype)) %>% #ADDED second filter May22
   group_by(CHROM, POS) %>% 
   summarize(num_gt=n())
 true_sites <- GTs_summary_RMlowcoverage %>% 
@@ -120,26 +125,6 @@ dip_GTs_1.1 <- dip_GTs_by_site %>%
   filter(genotype=="1|1" | genotype=="1/1") %>% 
   select(CHROM, POS) %>% 
   distinct() %>% 
-    mutate(chr=case_when(grepl("001133", CHROM) ~"chrI",
-                       grepl("001134", CHROM) ~"chrII",
-                       grepl("001135", CHROM) ~"chrIII",
-                       grepl("001136", CHROM) ~"chrIV",
-                       grepl("001137", CHROM) ~"chrV",
-                       grepl("001138", CHROM) ~"chrVI",
-                       grepl("001139", CHROM) ~"chrVII",
-                       grepl("001140", CHROM) ~"chrVIII",
-                       grepl("001141", CHROM) ~"chrIX",
-                       grepl("001142", CHROM) ~"chrX",
-                       grepl("001143", CHROM) ~"chrXI",
-                       grepl("001144", CHROM) ~"chrXII",
-                       grepl("001145", CHROM) ~"chrXIII",
-                       grepl("001146", CHROM) ~"chrXIV",
-                       grepl("001147", CHROM) ~"chrXV",
-                       grepl("001148", CHROM) ~"chrXVI",
-                       grepl("001224", CHROM) ~"chrMito"),
-         .after = CHROM) %>% 
-  select(!CHROM) %>% 
-  rename("CHROM" = chr) %>% 
   mutate(keep = "1")
 
 #Remove any sites left that don't have any 1|1 in diploid file
@@ -177,8 +162,6 @@ filtered_snpEff <- left_join(regions, snpEff_output) %>%
   relocate(gene_code, .before=ANN_short) %>% 
   relocate(base_change, .before=ANN_short) %>% 
   relocate(aa_change, .before=ANN_short) %>% 
-  #remove rows where the first annotation was a MODIFIER effect
-  filter(effect!="MODIFIER") %>% 
   relocate(OLY077_S101, .before=CdBM23_S1) %>% 
   select(!c(ANN_short)) %>% 
   #cleaning up the file
@@ -203,7 +186,12 @@ filtered_snpEff <- left_join(regions, snpEff_output) %>%
          .after=CHROM) %>% 
   arrange(chr,POS)
 
-filtered_snpEff %>% write_tsv("snpEff_RMheterozygotes_RMmodifiers_4Nov2024.tsv") #this has 462 sites
+snpEff_intergenic_haploid <- filtered_snpEff %>% filter(effect!="LOW" & effect!="MODERATE" & effect!="HIGH") 
+snpEff_intergenic_diploid %>% 
+  write_tsv("snpEff_intergenic_haploid_19May2025.tsv")
+
+snpEff_genic_haploid <- filtered_snpEff %>% filter(effect=="LOW" | effect=="MODERATE" | effect=="HIGH")
+snpEff_genic_haploid %>% write_tsv("snpEff_genic_haploid_19May2025.tsv") #this has _ sites
 
 #Sally did the steps below in Mathematica file "BazzicalupoSupMat_FinalizingGenes8Nov2024.nb"
 ##drop sites with 5 or more instances of GT "."
