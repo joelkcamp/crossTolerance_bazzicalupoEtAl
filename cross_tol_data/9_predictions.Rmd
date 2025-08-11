@@ -55,9 +55,9 @@ prop_pleiovis <- read.csv("predictions/prop_pleio.csv")
 usgs = read_csv('predictions/soilmet_trans_combos_both.csv')
 usgsvis = read_csv('predictions/soilmet_trans_combos.csv')
 ORP = read_csv('predictions/elect_pot_both.csv')
-ORP$diff = 1-(ORP$sim)
+ORP$diff = -(ORP$sim)
 ORPvis = read_csv('predictions/ele_pot.csv')
-ORPvis$diff = 1-(ORPvis$ORP)
+ORPvis$diff = -(ORPvis$ORP)
 
 met_ppm = read_csv("predictions/met_ppm.csv")
 
@@ -141,7 +141,7 @@ usgsvis$comba <- paste(usgsvis$reference, usgsvis$combo, sep= "")
 cross.tol.combos$prop.syn <- prop_pleiovis$prop.syn[match(cross.tol.combos$combo,prop_pleiovis$combo)] 
 cross.tol.combos$no.genes <- prop_pleiovis$no.genes[match(cross.tol.combos$combo,prop_pleiovis$combo)] 
 cross.tol.combos$all_slope <- usgsvis$all_slope[match(cross.tol.combos$combo,usgsvis$comba)] 
-cross.tol.combos$ORP <- ORPvis$ORP[match(cross.tol.combos$combo,ORPvis$combo)] 
+cross.tol.combos$ORP <- ORPvis$diff[match(cross.tol.combos$combo,ORPvis$combo)] 
 
 lm_ct =lm(ct ~ prop.syn + all_slope + ORP, data=cross.tol.combos)
 lm_ct_prop =lm(ct ~ prop.syn , data=cross.tol.combos)
@@ -161,9 +161,9 @@ ct_orp =cross.tol.combos %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted environmental distance", y="Metal pairs\nCross-tolerance")+
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=16,face="bold"))
+    labs(x="Electropotential similarity", y="Metal pairs\nCross-tolerance")+
+  theme(axis.text=element_text(size=16),
+        axis.title=element_text(size=18))
 ct_orp
 
 ct_slope =cross.tol.combos %>% 
@@ -171,9 +171,9 @@ ct_slope =cross.tol.combos %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted metal co-occurrence", y="Metal pairs\nCross-tolerance")+
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=16,face="bold"))
+    labs(x="Metal co-occurrence", y="Metal pairs\nCross-tolerance")+
+  theme(axis.text=element_text(size=16),
+        axis.title=element_text(size=18))
 ct_slope
 
 ct_prop =cross.tol.combos %>% 
@@ -181,9 +181,9 @@ ct_prop =cross.tol.combos %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-    labs(x="Predicted proportion of gene overlap", y="Metal pairs\nCross-tolerance")+
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=16,face="bold"))
+    labs(x="Proportion of gene overlap", y="Metal pairs\nCross-tolerance")+
+  theme(axis.text=element_text(size=16),
+        axis.title=element_text(size=18))
 ct_prop
 
 
@@ -194,13 +194,13 @@ Data visualization
 ```{r}
 
 orplin=mydata3 %>% 
-  ggplot(aes(x=diff,y=relfit)) +
+  ggplot(aes(x=ORP,y=relfit)) +
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-  theme(axis.text=element_text(size=12),
+  theme(axis.text=element_text(size=14),
         axis.title=element_text(size=14,face="bold"))+
-    labs(x="Predicted environmental distance", y="Cross-tolerance per evolved line")
+    labs(x="Electropotential similarity", y="Cross-tolerance per evolved line")
 
 
 proplin=mydata3 %>% 
@@ -208,9 +208,9 @@ proplin=mydata3 %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-  theme(axis.text=element_text(size=12),
+  theme(axis.text=element_text(size=14),
         axis.title=element_text(size=14,face="bold"))+
-    labs(x="Predicted proportion of gene overlap", y="Cross-tolerance per evolved line")
+    labs(x="Proportion of gene overlap", y="Cross-tolerance per evolved line")
 
 
 usgslin=mydata3 %>% 
@@ -218,9 +218,9 @@ usgslin=mydata3 %>%
     geom_point() +
     geom_smooth(method="lm",linetype="dashed",color="black", se=FALSE) +
      theme_minimal() +
-  theme(axis.text=element_text(size=12),
+  theme(axis.text=element_text(size=14),
         axis.title=element_text(size=20))+
-    labs(x="Predicted metal co-occurrence", y="Cross-tolerance per evolved line")
+    labs(x="Metal co-occurrence", y="Cross-tolerance per evolved line")
 
 
 
@@ -239,8 +239,8 @@ orpmap=ORPvis %>%
     scale_x_discrete(position = "top") + 
     theme_bw() +
     theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=20))
+  theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=22))
     #+scale_size(range=c(8,18), name="Number of genes\nin common")
 #ggsave("~/Dropbox/ottoLabNotes/aneuploidy/ORPheatmap.jpeg", width=8, height=6, units = "in", dpi=1000)
 
@@ -248,12 +248,12 @@ propmap=prop_pleiovis %>%
   ggplot(aes(x=met1,y=met2,color=prop.syn)) + 
     geom_point(aes(size = no.genes), shape=15) +
     scale_color_gradient(low = "yellow", high = "blue",
-    name="Proportion\npositive\npleiotropy") +
+    name="Proportion\nof gene overlap") +
     scale_x_discrete(position = "top") + 
     theme_bw() +
     theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=20)) +
+  theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=22)) +
     scale_size(range=c(8,18), name="Number of genes\nin common")
 
 
@@ -261,12 +261,12 @@ usgsmap=usgsvis %>%
   ggplot(aes(x=reference,y=combo,color=all_slope)) + 
     geom_point(shape=15, size=15) +
     scale_color_gradient(low = "yellow", high = "blue",
-    name="Metal\nCorrelation") +
+    name="Metal\nco-occurrence") +
     scale_x_discrete(position = "top") + 
     theme_bw() +
     theme(axis.title.x=element_blank(), axis.title.y=element_blank()) +
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=20))
+  theme(axis.text=element_text(size=20),
+        axis.title=element_text(size=22))
 
 
 ```
