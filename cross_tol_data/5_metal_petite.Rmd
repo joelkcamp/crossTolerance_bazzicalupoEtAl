@@ -11,7 +11,8 @@ library(tidyverse)
 library(cowplot)
 #library(ggblur)
 # set wd
-
+library(multcomp)
+library(agricolae)
 setwd("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/depth/10_DepthAnalyses/")
 source("~/Documents/GitHub/crossTolerance_bazzicalupoEtAl/cross_tol_data/bioscreen_functions.R")
 library(viridis)
@@ -225,32 +226,70 @@ met_pet=mydata7 %>%
 
 This study Petite t-test analysis
 ```{r}
+our_res_aov <- aov(relfit1 ~ petite*E2,
+  data = mydata7
+)
+
+summary(our_res_aov)
+
+post_test <- TukeyHSD(our_res_aov)
+
+post_test
+
+summary(post_test)
 
 t.test(relfit1 ~ petite, data = mydata7)
 
 petite_cd = mydata7 %>%
-  filter(E2==c("Cd")) 
+  filter(E2==c("Cd",".YPAD")) 
 t.test(relfit1 ~ petite, data = petite_cd)
+cd_res_aov <- aov(relfit1 ~ petite*E2,
+  data = petite_cd
+)
+summary(cd_res_aov)
 
 petite_co = mydata7 %>%
-  filter(E2==c("Co")) 
+  filter(E2==c("Co",".YPAD")) 
 t.test(relfit1 ~ petite, data = petite_co)
+co_res_aov <- aov(relfit1 ~ petite*E2,
+  data = petite_co
+)
+summary(co_res_aov)
 
 petite_cu = mydata7 %>%
-  filter(E2==c("Cu")) 
+  filter(E2==c("Cu",".YPAD")) 
 t.test(relfit1 ~ petite, data = petite_cu)
+cu_res_aov <- aov(relfit1 ~ petite*E2,
+  data = petite_cu
+)
+summary(cu_res_aov)
+
 
 petite_mn = mydata7 %>%
-  filter(E2==c("Mn")) 
+  filter(E2==c("Mn",".YPAD")) 
 t.test(relfit1 ~ petite, data = petite_mn)
+mn_res_aov <- aov(relfit1 ~ petite*E2,
+  data = petite_mn
+)
+summary(mn_res_aov)
+
 
 petite_ni = mydata7 %>%
-  filter(E2==c("Ni")) 
+  filter(E2==c("Ni",".YPAD")) 
 t.test(relfit1 ~ petite, data = petite_ni)
+ni_res_aov <- aov(relfit1 ~ petite*E2,
+  data = petite_ni
+)
+summary(ni_res_aov)
+
 
 petite_zn = mydata7 %>%
-  filter(E2==c("Zn")) 
+  filter(E2==c("Zn",".YPAD")) 
 t.test(relfit1 ~ petite, data = petite_zn)
+zn_res_aov <- aov(relfit1 ~ petite*E2,
+  data = petite_zn
+)
+summary(zn_res_aov)
 
 
 ```
